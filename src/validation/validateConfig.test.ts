@@ -27,15 +27,63 @@ describe("validateConfig", () => {
     expect(result).toEqual({ errors: [], warnings: [] });
   });
 
+  it("validates hierarchy using canonical L1 -> L2 -> L3 order", () => {
+    const canonical = [
+      createLevel({ id: "L1", totalSizeBytes: 1024, blockSizeBytes: 64, associativity: 2 }),
+      createLevel({ id: "L2", totalSizeBytes: 4096, blockSizeBytes: 64, associativity: 4 }),
+      createLevel({ id: "L3", totalSizeBytes: 2048, blockSizeBytes: 128, associativity: 8 }),
+    ];
+    const unsorted = [canonical[1], canonical[0], canonical[2]];
+
+    expect(validateConfig(unsorted)).toEqual(validateConfig(canonical));
+  });
+
   it("emits GEOMETRY_INCONSISTENT for enabled levels with non-power-of-two fields", () => {
     const result = validateConfig([
       createLevel({ id: "L1", blockSizeBytes: 24, associativity: 3, totalSizeBytes: 192 }),
     ]);
 
-    expect(result.errors).toContainEqual(
-      expect.objectContaining({ code: "GEOMETRY_INCONSISTENT", levelId: "L1" }),
-    );
+    expect(result.errors).toEqual([
+      {
+        code: "GEOMETRY_INCONSISTENT",
+        levelId: "L1",
+        message: "L1: blockSizeBytes must be a positive power of two",
+      },
+      {
+        code: "GEOMETRY_INCONSISTENT",
+        levelId: "L1",
+        message: "L1: associativity must be a positive power of two",
+      },
+    ]);
     expect(result.warnings).toEqual([]);
+  });
+
+  it("avoids cascading geometry errors when blockSizeBytes is invalid", () => {
+    const result = validateConfig([
+      createLevel({ id: "L1", totalSizeBytes: 1536, blockSizeBytes: 24, associativity: 4 }),
+    ]);
+
+    expect(result.errors).toEqual([
+      {
+        code: "GEOMETRY_INCONSISTENT",
+        levelId: "L1",
+        message: "L1: blockSizeBytes must be a positive power of two",
+      },
+    ]);
+  });
+
+  it("avoids cascading geometry errors when associativity is invalid", () => {
+    const result = validateConfig([
+      createLevel({ id: "L1", totalSizeBytes: 1536, blockSizeBytes: 64, associativity: 3 }),
+    ]);
+
+    expect(result.errors).toEqual([
+      {
+        code: "GEOMETRY_INCONSISTENT",
+        levelId: "L1",
+        message: "L1: associativity must be a positive power of two",
+      },
+    ]);
   });
 
   it("emits GEOMETRY_INCONSISTENT for non-integer derived numSets", () => {
@@ -67,6 +115,11 @@ describe("validateConfig", () => {
 
     expect(result.errors).toContainEqual(
       expect.objectContaining({ code: "BLOCK_SIZE_MONOTONICITY", levelId: "L2" }),
+    );
+    expect(result.errors).toContainEqual(
+      expect.objectContaining({
+        message: "L2: blockSizeBytes must be greater than or equal to L1.blockSizeBytes",
+      }),
     );
   });
 

@@ -5,6 +5,12 @@ type ValidationResult = {
   warnings: ValidationIssue[];
 };
 
+const LEVEL_ORDER: Record<CacheLevelConfig["id"], number> = {
+  L1: 0,
+  L2: 1,
+  L3: 2,
+};
+
 function isPositivePowerOfTwo(value: number): boolean {
   if (!Number.isSafeInteger(value) || value <= 0) {
     return false;
@@ -26,7 +32,10 @@ function createIssue(
 function geometryIssuesForLevel(level: CacheLevelConfig): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
 
-  if (!isPositivePowerOfTwo(level.blockSizeBytes)) {
+  const hasValidBlockSize = isPositivePowerOfTwo(level.blockSizeBytes);
+  const hasValidAssociativity = isPositivePowerOfTwo(level.associativity);
+
+  if (!hasValidBlockSize) {
     issues.push(
       createIssue(
         level.id,
@@ -36,7 +45,7 @@ function geometryIssuesForLevel(level: CacheLevelConfig): ValidationIssue[] {
     );
   }
 
-  if (!isPositivePowerOfTwo(level.associativity)) {
+  if (!hasValidAssociativity) {
     issues.push(
       createIssue(
         level.id,
@@ -44,6 +53,10 @@ function geometryIssuesForLevel(level: CacheLevelConfig): ValidationIssue[] {
         `${level.id}: associativity must be a positive power of two`,
       ),
     );
+  }
+
+  if (!hasValidBlockSize || !hasValidAssociativity) {
+    return issues;
   }
 
   const denominator = level.associativity * level.blockSizeBytes;
@@ -90,12 +103,13 @@ export function validateConfig(levels: CacheLevelConfig[]): ValidationResult {
   const errors: ValidationIssue[] = [];
   const warnings: ValidationIssue[] = [];
 
+  const enabledLevels = levels
+    .filter((level) => level.enabled)
+    .sort((left, right) => LEVEL_ORDER[left.id] - LEVEL_ORDER[right.id]);
+
   let previousEnabledLevel: CacheLevelConfig | null = null;
 
-  for (const level of levels) {
-    if (!level.enabled) {
-      continue;
-    }
+  for (const level of enabledLevels) {
 
     errors.push(...geometryIssuesForLevel(level));
 
@@ -115,7 +129,7 @@ export function validateConfig(levels: CacheLevelConfig[]): ValidationResult {
           createIssue(
             level.id,
             "BLOCK_SIZE_MONOTONICITY",
-            `${level.id}: blockSizeBytes must be greater than or equal to ${previousEnabledLevel.id}`,
+            `${level.id}: blockSizeBytes must be greater than or equal to ${previousEnabledLevel.id}.blockSizeBytes`,
           ),
         );
       }
