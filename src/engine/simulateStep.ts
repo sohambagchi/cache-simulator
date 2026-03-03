@@ -520,9 +520,16 @@ function forwardWrite(
 
   if (incomingBlock) {
     for (let offset = 0; offset < incomingBlock.dataBytes.length; offset += 1) {
-      mutable.nextState.memory[incomingBlock.baseAddress + offset] = incomingBlock.dataBytes[offset];
+      const byteAddress = incomingBlock.baseAddress + offset;
+      const byteDecode = terminalLevel
+        ? decodeAddress({
+            address: byteAddress,
+            offsetBits: terminalLevel.geometry.offsetBits,
+            indexBits: terminalLevel.geometry.indexBits,
+          })
+        : terminalDecode;
+      writeMemory(mutable, "W", byteAddress, incomingBlock.dataBytes[offset] ?? 0, byteDecode);
     }
-    writeMemory(mutable, "W", incomingBlock.baseAddress, incomingBlock.dataBytes[0] ?? 0, terminalDecode);
     return;
   }
 

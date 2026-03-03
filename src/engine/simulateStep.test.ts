@@ -255,4 +255,30 @@ describe("simulateStep", () => {
     expect(afterWrite.levels[0].sets[1].ways[0].dataBytes).toEqual([1, 2, 99, 4]);
     expect(afterWrite.levels[0].sets[1].ways[0].dirty).toBe(true);
   });
+
+  it("emits one memory event per written byte when dirty block writeback reaches memory", () => {
+    const state0 = createInitialState([
+      createLevel({ id: "L1", totalSizeBytes: 4, blockSizeBytes: 4, associativity: 1, writeHitPolicy: "WRITE_BACK" }),
+    ]);
+    state0.memory[0] = 10;
+    state0.memory[1] = 20;
+    state0.memory[2] = 30;
+    state0.memory[3] = 40;
+    state0.memory[4] = 50;
+    state0.memory[5] = 60;
+    state0.memory[6] = 70;
+    state0.memory[7] = 80;
+
+    const afterFill = simulateStep(state0, { kind: "R", address: 1 }).state;
+    const afterWrite = simulateStep(afterFill, { kind: "W", address: 2, value: 99 }).state;
+    const readEvictingDirtyLine = simulateStep(afterWrite, { kind: "R", address: 5 });
+
+    const memoryWrites = readEvictingDirtyLine.events.filter(
+      (event) => event.stage === "memory" && event.opKind === "W",
+    );
+
+    expect(memoryWrites.map((event) => event.address)).toEqual([0, 1, 2, 3]);
+    expect(memoryWrites.map((event) => event.offset)).toEqual([0, 1, 2, 3]);
+    expect(readEvictingDirtyLine.state.memory.slice(0, 4)).toEqual([10, 20, 99, 40]);
+  });
 });
