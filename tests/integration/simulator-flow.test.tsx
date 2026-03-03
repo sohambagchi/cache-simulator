@@ -32,6 +32,16 @@ function getProgress(host: HTMLDivElement): string {
   return progressValue.textContent?.trim() ?? "";
 }
 
+function selectBuiltInExample(host: HTMLDivElement, exampleId: string): void {
+  const select = host.querySelector('select[aria-label="Built-in example"]');
+  if (!(select instanceof HTMLSelectElement)) {
+    throw new Error("Built-in example select not found");
+  }
+
+  select.value = exampleId;
+  select.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
 describe("simulator integration flow", () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -47,14 +57,18 @@ describe("simulator integration flow", () => {
       root.render(<App />);
     });
 
-    expect(getProgress(host)).toBe("0/5");
+    act(() => {
+      selectBuiltInExample(host, "writeback-eviction-cascade");
+    });
+
+    expect(getProgress(host)).toBe("0/4");
     expect(host.textContent).toContain("No events yet");
 
     act(() => {
       clickButton(host, "Step");
     });
 
-    expect(getProgress(host)).toBe("1/5");
+    expect(getProgress(host)).toBe("1/4");
     expect(host.querySelectorAll(".timeline-list li").length).toBeGreaterThan(0);
 
     act(() => {
@@ -67,7 +81,7 @@ describe("simulator integration flow", () => {
       vi.advanceTimersByTime(700);
     });
 
-    expect(getProgress(host)).not.toBe("1/5");
+    expect(getProgress(host)).not.toBe("1/4");
 
     act(() => {
       clickButton(host, "Pause");
@@ -79,7 +93,7 @@ describe("simulator integration flow", () => {
       clickButton(host, "Reset");
     });
 
-    expect(getProgress(host)).toBe("0/5");
+    expect(getProgress(host)).toBe("0/4");
     expect(host.textContent).toContain("No events yet");
 
     act(() => {
