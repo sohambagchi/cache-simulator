@@ -7,14 +7,137 @@ body {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Trebuchet MS", "Gill Sans", sans-serif;
 }
 
 .app-shell {
-  padding: 3rem 1.5rem;
+  padding: 1.25rem;
 }
 
 h1 {
   margin: 0;
   font-size: clamp(1.75rem, 4vw, 2.5rem);
+}
+
+.app-shell__top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin-top: 1rem;
+}
+
+.app-shell__columns {
+  display: grid;
+  grid-template-columns: minmax(24rem, 32rem) 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+  align-items: start;
+}
+
+.app-shell__left,
+.app-shell__right,
+.app-shell__results,
+.panel-stack {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.global-control-bar {
+  background: #fff;
+  border: 1px solid #9fb4c7;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.global-control-bar__buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.global-control-bar__status {
+  margin: 0.5rem 0 0;
+  color: #7f1724;
+  font-weight: 600;
+}
+
+.collapsible-card {
+  border: 1px solid #9fb4c7;
+  border-radius: 0.5rem;
+  overflow: clip;
+  background: #fff;
+}
+
+.collapsible-card__toggle {
+  width: 100%;
+  border: 0;
+  background: #dfeaf3;
+  color: #102033;
+  text-align: left;
+  font-weight: 700;
+  padding: 0.65rem 0.75rem;
+  cursor: pointer;
+}
+
+.collapsible-card__content {
+  padding: 0.75rem;
+}
+
+.panel-fieldset {
+  border: 1px solid #d3dde6;
+  border-radius: 0.4rem;
+  padding: 0.5rem;
+}
+
+.panel-fieldset label {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 0.4rem;
+}
+
+.warning-list {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  color: #9a3412;
+  background: #fff7ed;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.stats-grid dt {
+  font-size: 0.8rem;
+  color: #35506f;
+}
+
+.stats-grid dd {
+  margin: 0.2rem 0 0;
+  font-weight: 700;
+}
+
+.cache-set h4 {
+  margin: 0.25rem 0;
+}
+
+.memory-list,
+.timeline-list {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+textarea,
+select,
+input,
+button {
+  font: inherit;
+}
+
+@media (max-width: 880px) {
+  .app-shell__columns {
+    grid-template-columns: 1fr;
+  }
 }
