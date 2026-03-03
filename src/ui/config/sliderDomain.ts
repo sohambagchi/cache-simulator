@@ -1,6 +1,6 @@
 export const GEOMETRY_SIZE_OPTIONS = Array.from(
-  { length: 21 },
-  (_, index) => 2 ** (index + 5)
+  { length: 24 },
+  (_, index) => 2 ** (index + 2)
 );
 export const ASSOCIATIVITY_OPTIONS = Array.from(
   { length: 11 },
