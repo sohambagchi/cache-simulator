@@ -10,7 +10,7 @@ Audience: CS students
 - Deliver a clarity-first, educational simulator for byte-addressed multi-level cache behavior.
 - Support 1 to 3 cache levels (L1-L3) with consistent per-level configuration and deterministic simulation.
 - Show step-by-step execution details, including tag/index/offset decode and set-level tag comparison.
-- Support policy scope approved for v1: replacement (LRU, FIFO) and write policy behavior (write-through, write-back).
+- Support policy scope approved for v1: replacement (LRU, FIFO), write-hit policy (write-through, write-back), and write-miss policy (write-allocate, write-no-allocate).
 - Accept workloads from built-in examples and manual text input.
 - Provide a desktop-first, two-column UI with functional mobile fallback.
 
@@ -41,7 +41,7 @@ High-level modules:
 
 Core entities:
 - Memory: byte-addressed logical memory backing store.
-- CacheLevel: `{ id, enabled, totalSizeBytes, blockSizeBytes, associativity, replacementPolicy, writePolicy }`.
+- CacheLevel: `{ id, enabled, totalSizeBytes, blockSizeBytes, associativity, replacementPolicy, writeHitPolicy, writeMissPolicy }`.
 - Set: fixed-size collection of ways per level.
 - Block/Line: `{ valid, dirty, tag, dataBytes, lruCounter/fifoOrder, lastTouchedStep }`.
 - Stats: per-level hits/misses/evictions and global memory read/write counters.
@@ -74,9 +74,13 @@ Each operation executes as a deterministic pipeline with emitted events for inst
    - On read hit: return data, update replacement metadata.
    - On read miss: continue to next level; memory on last-level miss.
    - On write hit:
-     - Write-through: update cache line and propagate write downstream immediately.
-     - Write-back: update cache line and mark dirty.
-   - On write miss: follow selected write policy handling path.
+     - Write-through (WT): update cache line and propagate write downstream immediately.
+     - Write-back (WB): update cache line and mark dirty.
+   - On write miss:
+     - Write-allocate (WA): fetch/install block, then apply level write-hit policy to the write:
+       - WA + WT: install/update and propagate downstream immediately.
+       - WA + WB: install/update and mark dirty.
+     - Write-no-allocate (WNA): do not install in this level; forward write downstream (or memory at terminal level) and continue without local fill.
 7. If fill required, choose victim by replacement policy (LRU or FIFO).
 8. If victim is dirty under write-back, generate downstream write-back event and cascade until absorbed by lower level or memory.
 9. Install/refresh block in current level and update metadata.
@@ -92,31 +96,41 @@ Event log details per level access include:
 
 Visual direction (approved): Clean Academic, slate + blue light theme, minimal functional dark mode, sans UI/body with monospace accents for addresses/tags/values, subtle instructional motion only.
 
-Desktop-first two-column layout:
+Desktop-first two-column layout with progressive disclosure:
 - Left column (controls and input):
+  - Global control bar (always visible): Step, Run, Pause, Reset, speed control, theme toggle (light default, minimal dark).
   - Hierarchy configuration card(s):
     - Enabled levels (L1-L3)
     - Total size (bytes)
     - Block size (bytes)
     - Associativity
     - Replacement policy (LRU/FIFO)
-    - Write policy (write-through/write-back)
+    - Write-hit policy (write-through/write-back)
+    - Write-miss policy (write-allocate/write-no-allocate)
+    - Policy sensibility warnings (warning-level, non-blocking, clarity-first wording):
+      - WB + WNA: flagged as non-standard and likely confusing for learners.
+      - WT + WA: flagged as non-standard and potentially extra traffic.
   - Workload input card:
     - Built-in example selector
     - Manual workload textarea
     - Parse/Load action
-  - Simulation controls:
-    - Step, Run, Pause, Reset
-    - Speed control (for run mode)
-    - Theme toggle (light default, minimal dark)
 - Right column (results and teaching surface):
   - Current operation and decoded fields panel
   - Event timeline panel (per-step detail)
   - Cache level visualization panels (set/way views with active highlights)
   - Statistics panel (hits, misses, evictions, memory traffic)
 
+Collapsible/default states:
+- Hierarchy Builder panel: expanded by default.
+- Workload Input panel: expanded by default.
+- Event Timeline panel: expanded by default during stepping; user-collapsible.
+- Cache Level panels: expanded for enabled levels; each level panel user-collapsible.
+- Statistics panel: expanded by default; user-collapsible.
+- Main Memory panel: collapsed by default; user-expandable.
+
 Mobile behavior:
-- Functional fallback with vertical stacking, no redesign goal for v1.
+- Desktop-first remains the target.
+- Mobile fallback is functional-only (stacked panels), with no parity or optimization goal for v1.
 
 ## 6) Workload input format and parser behavior
 
@@ -141,6 +155,8 @@ Configuration validation:
 - Require positive power-of-two `blockSizeBytes` and set counts.
 - Enforce geometry consistency from size/block/associativity relations.
 - Enforce monotonic hierarchy constraints (higher level must be larger than lower level).
+- Enforce block-size monotonicity explicitly: `blockSizeBytes(Ln+1) >= blockSizeBytes(Ln)`.
+- Apply write-policy sensibility checks as warnings (not errors) with plain-language guidance for non-standard combinations.
 
 Input/runtime validation:
 - Validate addresses/values for range and numeric format.
@@ -186,4 +202,4 @@ Manual verification checklist:
 
 - Optional address-decode visual strip (binary bit partition bar) remains deferred.
 - Any side-by-side comparison mode remains deferred beyond v1.
-- Any advanced policy extensions beyond LRU/FIFO and write-through/write-back remain deferred.
+- Any advanced policy extensions beyond LRU/FIFO, write-through/write-back, and write-allocate/write-no-allocate remain deferred.
