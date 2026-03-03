@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  GEOMETRY_SIZE_OPTIONS,
+  TOTAL_SIZE_OPTIONS,
+  BLOCK_SIZE_OPTIONS,
   toSliderIndex,
   fromSliderIndex,
   formatBytesLabel,
@@ -8,16 +9,22 @@ import {
 } from "./sliderDomain";
 
 describe("sliderDomain", () => {
-  it("provides powers-of-two size options from 4B to 32MB", () => {
-    expect(GEOMETRY_SIZE_OPTIONS[0]).toBe(4);
-    expect(GEOMETRY_SIZE_OPTIONS.at(-1)).toBe(33_554_432);
-    expect(GEOMETRY_SIZE_OPTIONS).toHaveLength(24);
+  it("provides powers-of-two block size options from 4B to 32B", () => {
+    expect(BLOCK_SIZE_OPTIONS[0]).toBe(4);
+    expect(BLOCK_SIZE_OPTIONS.at(-1)).toBe(32);
+    expect(BLOCK_SIZE_OPTIONS).toHaveLength(4);
+  });
+
+  it("provides powers-of-two total size options from 4B to 33MB", () => {
+    expect(TOTAL_SIZE_OPTIONS[0]).toBe(4);
+    expect(TOTAL_SIZE_OPTIONS.at(-1)).toBe(33_554_432);
+    expect(TOTAL_SIZE_OPTIONS).toHaveLength(24);
   });
 
   it("maps option values to/from slider indices", () => {
-    expect(toSliderIndex(4, GEOMETRY_SIZE_OPTIONS)).toBe(0);
-    expect(toSliderIndex(4096, GEOMETRY_SIZE_OPTIONS)).toBe(10);
-    expect(fromSliderIndex(10, GEOMETRY_SIZE_OPTIONS)).toBe(4096);
+    expect(toSliderIndex(4, BLOCK_SIZE_OPTIONS)).toBe(0);
+    expect(toSliderIndex(32, BLOCK_SIZE_OPTIONS)).toBe(3);
+    expect(fromSliderIndex(3, BLOCK_SIZE_OPTIONS)).toBe(32);
   });
 
   it("formats bytes and associativity labels for inline display", () => {

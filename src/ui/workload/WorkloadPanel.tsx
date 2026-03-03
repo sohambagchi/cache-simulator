@@ -85,6 +85,7 @@ export function WorkloadPanel({
       {/* Sim control buttons */}
       <div className="global-control-bar__buttons">
         <button
+          className="btn btn--primary"
           data-action="step"
           type="button"
           disabled={!canRun}
@@ -93,6 +94,7 @@ export function WorkloadPanel({
           Step
         </button>
         <button
+          className="btn btn--primary"
           data-action="run"
           type="button"
           disabled={!canRun}
@@ -101,6 +103,7 @@ export function WorkloadPanel({
           Run
         </button>
         <button
+          className="btn"
           data-action="pause"
           type="button"
           onClick={() => onDispatch({ type: "PAUSE" })}
@@ -108,6 +111,7 @@ export function WorkloadPanel({
           Pause
         </button>
         <button
+          className="btn"
           data-action="reset"
           type="button"
           onClick={() => onDispatch({ type: "RESET" })}
@@ -167,11 +171,12 @@ export function WorkloadPanel({
           />
         </label>
         <button
+          className="btn btn--primary global-control-bar__request-submit"
           data-action="submit-request"
           type="button"
           onClick={submitRequest}
         >
-          Submit request
+          Submit
         </button>
       </div>
 

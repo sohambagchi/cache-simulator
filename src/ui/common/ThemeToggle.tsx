@@ -9,7 +9,7 @@ export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
   return (
     <button
       type="button"
-      className="theme-toggle"
+      className="btn theme-toggle"
       data-testid="theme-toggle"
       aria-label="Toggle theme"
       aria-pressed={theme === "dark"}

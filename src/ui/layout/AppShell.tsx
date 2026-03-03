@@ -33,7 +33,7 @@ export function AppShell({
         <h1>{heading}</h1>
         <div className="app-shell__header-actions">
           <button
-            className="timeline-toggle-btn"
+            className="btn timeline-toggle-btn"
             type="button"
             onClick={() => setTimelineOpen(true)}
             aria-label="Open timeline"
