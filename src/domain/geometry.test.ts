@@ -42,6 +42,18 @@ describe("deriveGeometry", () => {
     ).toThrow("blockSizeBytes must be a power of two");
   });
 
+  it("rejects block size near a large power of two that is not exact", () => {
+    const nearLargePowerOfTwoBlockSize = Number.MAX_SAFE_INTEGER - 1;
+
+    expect(() =>
+      deriveGeometry(
+        nearLargePowerOfTwoBlockSize,
+        nearLargePowerOfTwoBlockSize,
+        1,
+      ),
+    ).toThrow("blockSizeBytes must be a power of two");
+  });
+
   it("throws for large non-power-of-two numSets that overflows 32-bit bitwise checks", () => {
     const largeNonPowerOfTwoNumSets = 3 * 2 ** 32;
 

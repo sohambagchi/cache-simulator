@@ -13,7 +13,9 @@ function isPowerOfTwo(value: number): boolean {
     return false;
   }
 
-  return Number.isInteger(Math.log2(value));
+  const safeIntegerValue = BigInt(value);
+
+  return (safeIntegerValue & (safeIntegerValue - 1n)) === 0n;
 }
 
 export function deriveGeometry(
