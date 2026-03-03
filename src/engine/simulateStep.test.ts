@@ -586,6 +586,92 @@ describe("simulateStep", () => {
     expect(r2.events.some((e) => e.stage === "miss")).toBe(false);
   });
 
+  it("EXCLUSIVE: clean eviction from L1 installs block into L2 (swap)", () => {
+    // L1: 16B (4 sets, 1 way, 4B blocks), L2: 64B (16 sets, 1 way, 4B blocks)
+    // Address 0  → L1 set 0 (tag 0), L2 set 0 (tag 0)
+    // Address 16 → L1 set 0 (tag 1), same L1 set → evicts address 0
+    const state = createInitialState(
+      [
+        {
+          id: "L1",
+          enabled: true,
+          totalSizeBytes: 16,
+          blockSizeBytes: 4,
+          associativity: 1,
+          replacementPolicy: "LRU",
+          writeHitPolicy: "WRITE_BACK",
+          writeMissPolicy: "WRITE_ALLOCATE"
+        },
+        {
+          id: "L2",
+          enabled: true,
+          totalSizeBytes: 64,
+          blockSizeBytes: 4,
+          associativity: 1,
+          replacementPolicy: "LRU",
+          writeHitPolicy: "WRITE_BACK",
+          writeMissPolicy: "WRITE_ALLOCATE"
+        }
+      ],
+      "EXCLUSIVE"
+    );
+
+    // R 0: fills address 0 into L1 only (EXCLUSIVE: not stored in L2)
+    const s1 = simulateStep(state, { kind: "R", address: 0 });
+    // R 16: evicts address 0 from L1 (clean), fills address 16 into L1
+    // EXCLUSIVE: clean eviction of addr 0 should migrate it down into L2
+    const s2 = simulateStep(s1.state, { kind: "R", address: 16 });
+
+    const l2 = s2.state.levels[1];
+    // L2 set for address 0: index = (0 / 4) % 16 = 0, tag = 0 / (4 * 16) = 0
+    const l2Set0 = l2.sets[0];
+    const migratedLine = l2Set0.ways.find((w) => w.valid);
+    expect(migratedLine).toBeDefined();
+    // After migration, reading address 0 again should be an L2 hit
+    const s3 = simulateStep(s2.state, { kind: "R", address: 0 });
+    expect(s3.events.some((e) => e.stage === "hit" && e.levelId === "L2")).toBe(
+      true
+    );
+    expect(s3.events.some((e) => e.stage === "memory")).toBe(false);
+  });
+
+  it("EXCLUSIVE: dirty eviction from L1 still writes back normally (not swap)", () => {
+    const state = createInitialState(
+      [
+        {
+          id: "L1",
+          enabled: true,
+          totalSizeBytes: 16,
+          blockSizeBytes: 4,
+          associativity: 1,
+          replacementPolicy: "LRU",
+          writeHitPolicy: "WRITE_BACK",
+          writeMissPolicy: "WRITE_ALLOCATE"
+        },
+        {
+          id: "L2",
+          enabled: true,
+          totalSizeBytes: 64,
+          blockSizeBytes: 4,
+          associativity: 1,
+          replacementPolicy: "LRU",
+          writeHitPolicy: "WRITE_BACK",
+          writeMissPolicy: "WRITE_ALLOCATE"
+        }
+      ],
+      "EXCLUSIVE"
+    );
+
+    // Write to address 0 → allocates dirty in L1
+    const s1 = simulateStep(state, { kind: "W", address: 0, value: 77 });
+    // R 16 → evicts dirty addr 0 from L1 — should writeback to L2 (or memory), not just swap
+    const s2 = simulateStep(s1.state, { kind: "R", address: 16 });
+
+    expect(
+      s2.events.some((e) => e.stage === "writeback" && e.levelId === "L1")
+    ).toBe(true);
+  });
+
   it("emits one memory event per written byte when dirty block writeback reaches memory", () => {
     const state0 = createInitialState([
       createLevel({

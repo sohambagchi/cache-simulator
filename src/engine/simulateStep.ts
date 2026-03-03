@@ -326,6 +326,41 @@ function fillReadMissAtLevel(
         baseAddress: evictedAddress,
         dataBytes: victim.dataBytes
       });
+    } else if (
+      mutable.nextState.inclusionPolicy === "EXCLUSIVE" &&
+      levelIndex + 1 < mutable.nextState.levels.length
+    ) {
+      // EXCLUSIVE: clean eviction — migrate block down into L(n+1) instead of discarding it
+      const evictedAddress = encodeAddress({
+        tag: victim.tag,
+        index: decoded.index,
+        offset: 0,
+        offsetBits: level.geometry.offsetBits,
+        indexBits: level.geometry.indexBits
+      });
+      const nextLevel = mutable.nextState.levels[levelIndex + 1];
+      const nextDecoded = decodeAddress({
+        address: evictedAddress,
+        offsetBits: nextLevel.geometry.offsetBits,
+        indexBits: nextLevel.geometry.indexBits
+      });
+      const nextSet = nextLevel.sets[nextDecoded.index];
+      const nextVictimWay = chooseVictimWay(
+        nextSet.ways.map((way, wayIndex) => ({
+          way: wayIndex,
+          valid: way.valid,
+          lastUsedAt: way.lastUsedAt,
+          insertedAt: way.insertedAt
+        })),
+        nextLevel.config.replacementPolicy
+      );
+      setLine(nextSet.ways[nextVictimWay], {
+        tag: nextDecoded.tag,
+        dataBytes: victim.dataBytes,
+        dirty: false,
+        tick: mutable.tick,
+        setInsertedAt: true
+      });
     }
   }
 
@@ -538,6 +573,41 @@ function forwardWrite(
         forwardWrite(mutable, levelIndex + 1, evictedAddress, undefined, {
           baseAddress: evictedAddress,
           dataBytes: victim.dataBytes
+        });
+      } else if (
+        mutable.nextState.inclusionPolicy === "EXCLUSIVE" &&
+        levelIndex + 1 < mutable.nextState.levels.length
+      ) {
+        // EXCLUSIVE: clean eviction — migrate block down into L(n+1) instead of discarding it
+        const evictedAddress = encodeAddress({
+          tag: victim.tag,
+          index: decoded.index,
+          offset: 0,
+          offsetBits: level.geometry.offsetBits,
+          indexBits: level.geometry.indexBits
+        });
+        const nextLevel = mutable.nextState.levels[levelIndex + 1];
+        const nextDecoded = decodeAddress({
+          address: evictedAddress,
+          offsetBits: nextLevel.geometry.offsetBits,
+          indexBits: nextLevel.geometry.indexBits
+        });
+        const nextSet = nextLevel.sets[nextDecoded.index];
+        const nextVictimWay = chooseVictimWay(
+          nextSet.ways.map((way, wayIndex) => ({
+            way: wayIndex,
+            valid: way.valid,
+            lastUsedAt: way.lastUsedAt,
+            insertedAt: way.insertedAt
+          })),
+          nextLevel.config.replacementPolicy
+        );
+        setLine(nextSet.ways[nextVictimWay], {
+          tag: nextDecoded.tag,
+          dataBytes: victim.dataBytes,
+          dirty: false,
+          tick: mutable.tick,
+          setInsertedAt: true
         });
       }
     }
