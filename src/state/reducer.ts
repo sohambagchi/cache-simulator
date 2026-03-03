@@ -1,7 +1,11 @@
 import type { CacheLevelConfig } from "../domain/types";
 import { createInitialState, type SimState } from "../engine/initialState";
 import { simulateStep } from "../engine/simulateStep";
-import { parseWorkload, type WorkloadOp, type WorkloadParseResult } from "../parser/parseWorkload";
+import {
+  parseWorkload,
+  type WorkloadOp,
+  type WorkloadParseResult
+} from "../parser/parseWorkload";
 import { validateConfig } from "../validation/validateConfig";
 import { BUILTIN_WORKLOAD_EXAMPLES } from "../workloads/examples";
 import type { Action } from "./actions";
@@ -18,7 +22,7 @@ const DEFAULT_CONFIG_LEVELS: CacheLevelConfig[] = [
     associativity: 2,
     replacementPolicy: "LRU",
     writeHitPolicy: "WRITE_BACK",
-    writeMissPolicy: "WRITE_ALLOCATE",
+    writeMissPolicy: "WRITE_ALLOCATE"
   },
   {
     id: "L2",
@@ -28,7 +32,7 @@ const DEFAULT_CONFIG_LEVELS: CacheLevelConfig[] = [
     associativity: 2,
     replacementPolicy: "LRU",
     writeHitPolicy: "WRITE_BACK",
-    writeMissPolicy: "WRITE_ALLOCATE",
+    writeMissPolicy: "WRITE_ALLOCATE"
   },
   {
     id: "L3",
@@ -38,8 +42,8 @@ const DEFAULT_CONFIG_LEVELS: CacheLevelConfig[] = [
     associativity: 4,
     replacementPolicy: "LRU",
     writeHitPolicy: "WRITE_BACK",
-    writeMissPolicy: "WRITE_ALLOCATE",
-  },
+    writeMissPolicy: "WRITE_ALLOCATE"
+  }
 ];
 
 type ValidationResult = ReturnType<typeof validateConfig>;
@@ -55,7 +59,10 @@ export type AppState = {
   statusMessage: string | null;
 };
 
-function createSimulationState(configLevels: CacheLevelConfig[], fallbackState?: SimState): SimState {
+function createSimulationState(
+  configLevels: CacheLevelConfig[],
+  fallbackState?: SimState
+): SimState {
   try {
     return createInitialState(configLevels);
   } catch (error) {
@@ -67,7 +74,11 @@ function createSimulationState(configLevels: CacheLevelConfig[], fallbackState?:
   }
 }
 
-function resetForTrace(state: AppState, workloadText: string, parseResult: WorkloadParseResult): AppState {
+function resetForTrace(
+  state: AppState,
+  workloadText: string,
+  parseResult: WorkloadParseResult
+): AppState {
   return {
     ...state,
     workloadText,
@@ -75,7 +86,7 @@ function resetForTrace(state: AppState, workloadText: string, parseResult: Workl
     simState: createSimulationState(state.configLevels, state.simState),
     nextOpIndex: 0,
     isPlaying: false,
-    statusMessage: null,
+    statusMessage: null
   };
 }
 
@@ -84,7 +95,7 @@ function runOneOperation(state: AppState): AppState {
   if (blockingMessage) {
     return {
       ...state,
-      statusMessage: blockingMessage,
+      statusMessage: blockingMessage
     };
   }
 
@@ -92,20 +103,23 @@ function runOneOperation(state: AppState): AppState {
   if (!operation) {
     return {
       ...state,
-      statusMessage: null,
+      statusMessage: null
     };
   }
 
   return runOperation(state, operation, true);
 }
 
-function runOperation(state: AppState, operation: WorkloadOp, incrementOpIndex: boolean): AppState {
-
+function runOperation(
+  state: AppState,
+  operation: WorkloadOp,
+  incrementOpIndex: boolean
+): AppState {
   const result = simulateStep(state.simState, operation);
   if (result.diagnostic) {
     return {
       ...state,
-      statusMessage: result.diagnostic,
+      statusMessage: result.diagnostic
     };
   }
 
@@ -113,7 +127,7 @@ function runOperation(state: AppState, operation: WorkloadOp, incrementOpIndex: 
     ...state,
     simState: result.state,
     nextOpIndex: incrementOpIndex ? state.nextOpIndex + 1 : state.nextOpIndex,
-    statusMessage: null,
+    statusMessage: null
   };
 }
 
@@ -121,7 +135,9 @@ function getEnabledLevelCount(configLevels: CacheLevelConfig[]): number {
   return configLevels.filter((level) => level.enabled).length;
 }
 
-function constrainEnabledHierarchy(configLevels: CacheLevelConfig[]): CacheLevelConfig[] {
+function constrainEnabledHierarchy(
+  configLevels: CacheLevelConfig[]
+): CacheLevelConfig[] {
   const constrained = [...configLevels];
   let previousEnabledLevel: CacheLevelConfig | null = null;
 
@@ -140,7 +156,7 @@ function constrainEnabledHierarchy(configLevels: CacheLevelConfig[]): CacheLevel
     if (nextLevel.blockSizeBytes < previousEnabledLevel.blockSizeBytes) {
       nextLevel = {
         ...nextLevel,
-        blockSizeBytes: previousEnabledLevel.blockSizeBytes,
+        blockSizeBytes: previousEnabledLevel.blockSizeBytes
       };
     }
 
@@ -156,7 +172,7 @@ function constrainEnabledHierarchy(configLevels: CacheLevelConfig[]): CacheLevel
 
       nextLevel = {
         ...nextLevel,
-        totalSizeBytes: adjustedTotal,
+        totalSizeBytes: adjustedTotal
       };
     }
 
@@ -192,14 +208,14 @@ export const initialAppState: AppState = {
   simState: createSimulationState(DEFAULT_CONFIG_LEVELS),
   nextOpIndex: 0,
   isPlaying: false,
-  statusMessage: null,
+  statusMessage: null
 };
 
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case "LOAD_EXAMPLE_TRACE": {
       const example = BUILTIN_WORKLOAD_EXAMPLES.find(
-        (entry) => entry.id === action.payload.exampleId,
+        (entry) => entry.id === action.payload.exampleId
       );
 
       if (!example) {
@@ -218,14 +234,14 @@ export function reducer(state: AppState, action: Action): AppState {
         return {
           ...state,
           isPlaying: false,
-          statusMessage: blockingMessage,
+          statusMessage: blockingMessage
         };
       }
 
       return {
         ...state,
         isPlaying: true,
-        statusMessage: null,
+        statusMessage: null
       };
     }
     case "STEP":
@@ -236,7 +252,7 @@ export function reducer(state: AppState, action: Action): AppState {
       if (state.validation.errors.length > 0) {
         return {
           ...state,
-          statusMessage: CONFIG_BLOCKING_MESSAGE,
+          statusMessage: CONFIG_BLOCKING_MESSAGE
         };
       }
 
@@ -245,7 +261,7 @@ export function reducer(state: AppState, action: Action): AppState {
     case "PAUSE":
       return {
         ...state,
-        isPlaying: false,
+        isPlaying: false
       };
     case "RESET":
       return {
@@ -253,7 +269,7 @@ export function reducer(state: AppState, action: Action): AppState {
         simState: createSimulationState(state.configLevels, state.simState),
         nextOpIndex: 0,
         isPlaying: false,
-        statusMessage: null,
+        statusMessage: null
       };
     case "UPDATE_CONFIG": {
       const enabledCount = getEnabledLevelCount(state.configLevels);
@@ -263,16 +279,19 @@ export function reducer(state: AppState, action: Action): AppState {
         }
 
         const requestedEnabled = action.payload.patch.enabled;
-        const shouldKeepEnabled = requestedEnabled === false && level.enabled && enabledCount === 1;
+        const shouldKeepEnabled =
+          requestedEnabled === false && level.enabled && enabledCount === 1;
 
         return {
           ...level,
           ...action.payload.patch,
-          enabled: shouldKeepEnabled ? true : (requestedEnabled ?? level.enabled),
-          id: level.id,
+          enabled: shouldKeepEnabled
+            ? true
+            : (requestedEnabled ?? level.enabled),
+          id: level.id
         };
       });
-      const configLevels = constrainEnabledHierarchy(updatedLevels);
+      const configLevels = updatedLevels;
 
       return {
         ...state,
@@ -281,7 +300,7 @@ export function reducer(state: AppState, action: Action): AppState {
         simState: createSimulationState(configLevels, state.simState),
         nextOpIndex: 0,
         isPlaying: false,
-        statusMessage: null,
+        statusMessage: null
       };
     }
     default:

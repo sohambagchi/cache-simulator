@@ -10,7 +10,7 @@ describe("app reducer", () => {
 
     const state = reducer(initialAppState, {
       type: "LOAD_EXAMPLE_TRACE",
-      payload: { exampleId: example.id },
+      payload: { exampleId: example.id }
     });
 
     expect(state.workloadText).toBe(example.text);
@@ -22,7 +22,7 @@ describe("app reducer", () => {
 
     const state = reducer(initialAppState, {
       type: "LOAD_TRACE",
-      payload: { text },
+      payload: { text }
     });
 
     expect(state.workloadText).toBe(text);
@@ -32,7 +32,7 @@ describe("app reducer", () => {
   it("steps one operation", () => {
     const loaded = reducer(initialAppState, {
       type: "LOAD_TRACE",
-      payload: { text: "R 0" },
+      payload: { text: "R 0" }
     });
 
     const stepped = reducer(loaded, { type: "STEP" });
@@ -44,7 +44,7 @@ describe("app reducer", () => {
   it("advances on play tick", () => {
     const loaded = reducer(initialAppState, {
       type: "LOAD_TRACE",
-      payload: { text: "R 0" },
+      payload: { text: "R 0" }
     });
 
     const ticked = reducer(loaded, { type: "PLAY_TICK" });
@@ -56,7 +56,7 @@ describe("app reducer", () => {
   it("pauses playback", () => {
     const paused = reducer(
       { ...initialAppState, isPlaying: true },
-      { type: "PAUSE" },
+      { type: "PAUSE" }
     );
 
     expect(paused.isPlaying).toBe(false);
@@ -65,7 +65,7 @@ describe("app reducer", () => {
   it("starts playback when run is allowed", () => {
     const loaded = reducer(initialAppState, {
       type: "LOAD_TRACE",
-      payload: { text: "R 0" },
+      payload: { text: "R 0" }
     });
 
     const played = reducer(loaded, { type: "PLAY" });
@@ -77,7 +77,7 @@ describe("app reducer", () => {
   it("resets simulation", () => {
     const loaded = reducer(initialAppState, {
       type: "LOAD_TRACE",
-      payload: { text: "R 0" },
+      payload: { text: "R 0" }
     });
     const stepped = reducer(loaded, { type: "STEP" });
 
@@ -93,8 +93,8 @@ describe("app reducer", () => {
       type: "UPDATE_CONFIG",
       payload: {
         levelId: "L1",
-        patch: { blockSizeBytes: 3 },
-      },
+        patch: { blockSizeBytes: 3 }
+      }
     });
 
     expect(errored.validation.errors.length).toBeGreaterThan(0);
@@ -105,9 +105,9 @@ describe("app reducer", () => {
         levelId: "L2",
         patch: {
           writeHitPolicy: "WRITE_THROUGH",
-          writeMissPolicy: "WRITE_ALLOCATE",
-        },
-      },
+          writeMissPolicy: "WRITE_ALLOCATE"
+        }
+      }
     });
 
     expect(warned.validation.errors).toEqual([]);
@@ -122,12 +122,14 @@ describe("app reducer", () => {
       type: "UPDATE_CONFIG",
       payload: {
         levelId: "L1",
-        patch: { writeHitPolicy: "WRITE_THROUGH" },
-      },
+        patch: { writeHitPolicy: "WRITE_THROUGH" }
+      }
     });
 
     expect(updated.configLevels[0].writeHitPolicy).toBe("WRITE_THROUGH");
-    expect(updated.configLevels[0].writeMissPolicy).toBe(previousL1.writeMissPolicy);
+    expect(updated.configLevels[0].writeMissPolicy).toBe(
+      previousL1.writeMissPolicy
+    );
     expect(updated.configLevels[1]).toBe(previousL2);
   });
 
@@ -139,12 +141,14 @@ describe("app reducer", () => {
       type: "UPDATE_CONFIG",
       payload: {
         levelId: "L1",
-        patch: { writeMissPolicy: "WRITE_NO_ALLOCATE" },
-      },
+        patch: { writeMissPolicy: "WRITE_NO_ALLOCATE" }
+      }
     });
 
     expect(updated.configLevels[0].writeMissPolicy).toBe("WRITE_NO_ALLOCATE");
-    expect(updated.configLevels[0].writeHitPolicy).toBe(previousL1.writeHitPolicy);
+    expect(updated.configLevels[0].writeHitPolicy).toBe(
+      previousL1.writeHitPolicy
+    );
     expect(updated.configLevels[1]).toBe(previousL2);
   });
 
@@ -153,27 +157,30 @@ describe("app reducer", () => {
       type: "UPDATE_CONFIG",
       payload: {
         levelId: "L2",
-        patch: { enabled: false },
-      },
+        patch: { enabled: false }
+      }
     });
 
     const onlyL1 = reducer(onlyL1Enabled, {
       type: "UPDATE_CONFIG",
       payload: {
         levelId: "L3",
-        patch: { enabled: false },
-      },
+        patch: { enabled: false }
+      }
     });
 
     const attemptedDisableLast = reducer(onlyL1, {
       type: "UPDATE_CONFIG",
       payload: {
         levelId: "L1",
-        patch: { enabled: false },
-      },
+        patch: { enabled: false }
+      }
     });
 
-    expect(attemptedDisableLast.configLevels.find((level) => level.id === "L1")?.enabled).toBe(true);
+    expect(
+      attemptedDisableLast.configLevels.find((level) => level.id === "L1")
+        ?.enabled
+    ).toBe(true);
     expect(attemptedDisableLast.validation.errors).toEqual([]);
   });
 
@@ -181,28 +188,34 @@ describe("app reducer", () => {
     const state = reducer(initialAppState, {
       type: "SUBMIT_REQUEST",
       payload: {
-        request: { kind: "W", address: 9, value: 22 },
-      },
+        request: { kind: "W", address: 9, value: 22 }
+      }
     });
 
     expect(state.simState.clock).toBe(1);
     expect(state.simState.stats.writes).toBe(1);
-    expect(state.simState.events.some((event) => event.address === 9)).toBe(true);
+    expect(state.simState.events.some((event) => event.address === 9)).toBe(
+      true
+    );
   });
 
   it("blocks STEP and PLAY_TICK when parseResult.errors.length > 0", () => {
     const invalid = reducer(initialAppState, {
       type: "LOAD_TRACE",
-      payload: { text: "R nope" },
+      payload: { text: "R nope" }
     });
 
     const stepped = reducer(invalid, { type: "STEP" });
     const ticked = reducer(invalid, { type: "PLAY_TICK" });
 
     expect(stepped.nextOpIndex).toBe(0);
-    expect(stepped.statusMessage).toBe("Fix parse errors before running simulation.");
+    expect(stepped.statusMessage).toBe(
+      "Fix parse errors before running simulation."
+    );
     expect(ticked.nextOpIndex).toBe(0);
-    expect(ticked.statusMessage).toBe("Fix parse errors before running simulation.");
+    expect(ticked.statusMessage).toBe(
+      "Fix parse errors before running simulation."
+    );
   });
 
   it("blocks STEP and PLAY_TICK when validation.errors.length > 0", () => {
@@ -210,12 +223,12 @@ describe("app reducer", () => {
       type: "UPDATE_CONFIG",
       payload: {
         levelId: "L1",
-        patch: { blockSizeBytes: 3 },
-      },
+        patch: { blockSizeBytes: 3 }
+      }
     });
     const loaded = reducer(invalidConfig, {
       type: "LOAD_TRACE",
-      payload: { text: "R 0" },
+      payload: { text: "R 0" }
     });
 
     const stepped = reducer(loaded, { type: "STEP" });
@@ -231,13 +244,15 @@ describe("app reducer", () => {
   it("blocks PLAY when parse errors exist", () => {
     const invalid = reducer(initialAppState, {
       type: "LOAD_TRACE",
-      payload: { text: "R nope" },
+      payload: { text: "R nope" }
     });
 
     const played = reducer({ ...invalid, isPlaying: true }, { type: "PLAY" });
 
     expect(played.isPlaying).toBe(false);
-    expect(played.statusMessage).toBe("Fix parse errors before running simulation.");
+    expect(played.statusMessage).toBe(
+      "Fix parse errors before running simulation."
+    );
   });
 
   it("blocks PLAY when configuration errors exist", () => {
@@ -245,12 +260,12 @@ describe("app reducer", () => {
       type: "UPDATE_CONFIG",
       payload: {
         levelId: "L1",
-        patch: { blockSizeBytes: 3 },
-      },
+        patch: { blockSizeBytes: 3 }
+      }
     });
     const loaded = reducer(invalidConfig, {
       type: "LOAD_TRACE",
-      payload: { text: "R 0" },
+      payload: { text: "R 0" }
     });
 
     const played = reducer({ ...loaded, isPlaying: true }, { type: "PLAY" });
@@ -266,13 +281,13 @@ describe("app reducer", () => {
         levelId: "L2",
         patch: {
           writeHitPolicy: "WRITE_THROUGH",
-          writeMissPolicy: "WRITE_ALLOCATE",
-        },
-      },
+          writeMissPolicy: "WRITE_ALLOCATE"
+        }
+      }
     });
     const loaded = reducer(warned, {
       type: "LOAD_TRACE",
-      payload: { text: "R 0\nR 0" },
+      payload: { text: "R 0\nR 0" }
     });
 
     const stepped = reducer(loaded, { type: "STEP" });
@@ -290,13 +305,13 @@ describe("app reducer", () => {
         levelId: "L2",
         patch: {
           writeHitPolicy: "WRITE_THROUGH",
-          writeMissPolicy: "WRITE_ALLOCATE",
-        },
-      },
+          writeMissPolicy: "WRITE_ALLOCATE"
+        }
+      }
     });
     const loaded = reducer(warned, {
       type: "LOAD_TRACE",
-      payload: { text: "R 0" },
+      payload: { text: "R 0" }
     });
 
     const played = reducer(loaded, { type: "PLAY" });
@@ -310,14 +325,14 @@ describe("app reducer", () => {
   it("computes run eligibility from parse and config errors deterministically", () => {
     const parseInvalid = reducer(initialAppState, {
       type: "LOAD_TRACE",
-      payload: { text: "R nope" },
+      payload: { text: "R nope" }
     });
     const configInvalid = reducer(initialAppState, {
       type: "UPDATE_CONFIG",
       payload: {
         levelId: "L1",
-        patch: { blockSizeBytes: 3 },
-      },
+        patch: { blockSizeBytes: 3 }
+      }
     });
     const warningOnly = reducer(initialAppState, {
       type: "UPDATE_CONFIG",
@@ -325,9 +340,9 @@ describe("app reducer", () => {
         levelId: "L2",
         patch: {
           writeHitPolicy: "WRITE_THROUGH",
-          writeMissPolicy: "WRITE_ALLOCATE",
-        },
-      },
+          writeMissPolicy: "WRITE_ALLOCATE"
+        }
+      }
     });
 
     expect(selectCanRunSimulation(parseInvalid)).toBe(false);
@@ -335,13 +350,14 @@ describe("app reducer", () => {
     expect(selectCanRunSimulation(warningOnly)).toBe(true);
   });
 
-  it("constrains cross-level total size monotonicity during edit updates", () => {
+  it("preserves user-selected cross-level invalid total size during UPDATE_CONFIG", () => {
+    // L1 default is 256, L2 default is 512. Set L1 to 1024 (> L2 512) → L2 should NOT be auto-corrected.
     const updated = reducer(initialAppState, {
       type: "UPDATE_CONFIG",
       payload: {
         levelId: "L1",
-        patch: { totalSizeBytes: 1024 },
-      },
+        patch: { totalSizeBytes: 1024 }
+      }
     });
 
     const l1 = updated.configLevels.find((level) => level.id === "L1");
@@ -349,17 +365,22 @@ describe("app reducer", () => {
 
     expect(l1).toBeDefined();
     expect(l2).toBeDefined();
-    expect(l2!.totalSizeBytes).toBeGreaterThan(l1!.totalSizeBytes);
-    expect(updated.validation.errors).toEqual([]);
+    // Reducer no longer auto-corrects L2; it stays at 512
+    expect(l1!.totalSizeBytes).toBe(1024);
+    expect(l2!.totalSizeBytes).toBe(512);
+    expect(updated.validation.errors).toContainEqual(
+      expect.objectContaining({ code: "HIERARCHY_MONOTONICITY" })
+    );
   });
 
-  it("constrains cross-level block size monotonicity during edit updates", () => {
+  it("preserves user-selected cross-level invalid block size during UPDATE_CONFIG", () => {
+    // L1 default blockSize is 16. Set L2 blockSize to 8 (< L1 16) → L2 should NOT be auto-corrected.
     const updated = reducer(initialAppState, {
       type: "UPDATE_CONFIG",
       payload: {
         levelId: "L2",
-        patch: { blockSizeBytes: 8 },
-      },
+        patch: { blockSizeBytes: 8 }
+      }
     });
 
     const l1 = updated.configLevels.find((level) => level.id === "L1");
@@ -367,7 +388,10 @@ describe("app reducer", () => {
 
     expect(l1).toBeDefined();
     expect(l2).toBeDefined();
-    expect(l2!.blockSizeBytes).toBeGreaterThanOrEqual(l1!.blockSizeBytes);
-    expect(updated.validation.errors).toEqual([]);
+    // Reducer preserves the invalid value rather than coercing
+    expect(l2!.blockSizeBytes).toBe(8);
+    expect(updated.validation.errors).toContainEqual(
+      expect.objectContaining({ code: "BLOCK_SIZE_MONOTONICITY" })
+    );
   });
 });

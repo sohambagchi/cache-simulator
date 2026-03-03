@@ -8,7 +8,9 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: "Trebuchet MS", "Gill Sans", sans-serif;
-  transition: background-color 120ms ease-out, color 120ms ease-out;
+  transition:
+    background-color 120ms ease-out,
+    color 120ms ease-out;
 }
 
 .app-shell {
@@ -261,6 +263,35 @@ select,
 input,
 button {
   font: inherit;
+}
+
+.slider-field {
+  margin-bottom: 0.4rem;
+}
+
+.slider-field label {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 0.1rem;
+}
+
+.slider-field input[type="range"] {
+  width: 100%;
+  accent-color: var(--text-strong);
+}
+
+.slider-field input[type="range"][data-soft-invalid="true"] {
+  accent-color: var(--status-warning-text, #b07800);
+}
+
+.slider-field input[type="range"][aria-invalid="true"] {
+  accent-color: var(--status-error-text, #b02020);
+}
+
+.field-error {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--status-error-text, #b02020);
 }
 
 @media (max-width: 880px) {

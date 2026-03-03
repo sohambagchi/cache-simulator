@@ -19,7 +19,9 @@ function getInitialTheme(): ThemeMode {
   }
 
   const currentTheme = document.documentElement.getAttribute("data-theme");
-  return currentTheme === "dark" || currentTheme === "light" ? currentTheme : "light";
+  return currentTheme === "dark" || currentTheme === "light"
+    ? currentTheme
+    : "light";
 }
 
 function getNextTheme(theme: ThemeMode): ThemeMode {
@@ -51,7 +53,13 @@ function AppContent() {
     }, playbackSpeedMs);
 
     return () => window.clearInterval(timer);
-  }, [dispatch, playbackSpeedMs, state.isPlaying, state.nextOpIndex, state.parseResult.ops.length]);
+  }, [
+    dispatch,
+    playbackSpeedMs,
+    state.isPlaying,
+    state.nextOpIndex,
+    state.parseResult.ops.length
+  ]);
 
   return (
     <AppShell
@@ -62,7 +70,9 @@ function AppContent() {
           statusMessage={state.statusMessage}
           playbackSpeedMs={playbackSpeedMs}
           theme={theme}
-          onToggleTheme={() => setTheme((currentTheme) => getNextTheme(currentTheme))}
+          onToggleTheme={() =>
+            setTheme((currentTheme) => getNextTheme(currentTheme))
+          }
           onPlaybackSpeedChange={setPlaybackSpeedMs}
           onDispatch={dispatch}
         />
@@ -71,7 +81,10 @@ function AppContent() {
         <HierarchyBuilderPanel
           levels={state.configLevels}
           warnings={state.validation.warnings}
-          onUpdateLevel={(levelId, patch) => dispatch({ type: "UPDATE_CONFIG", payload: { levelId, patch } })}
+          errors={state.validation.errors}
+          onUpdateLevel={(levelId, patch) =>
+            dispatch({ type: "UPDATE_CONFIG", payload: { levelId, patch } })
+          }
         />
       }
       workloadPanel={
@@ -79,8 +92,12 @@ function AppContent() {
           workloadText={state.workloadText}
           parseResult={state.parseResult}
           examples={BUILTIN_WORKLOAD_EXAMPLES}
-          onChangeTrace={(text) => dispatch({ type: "LOAD_TRACE", payload: { text } })}
-          onSelectExample={(exampleId) => dispatch({ type: "LOAD_EXAMPLE_TRACE", payload: { exampleId } })}
+          onChangeTrace={(text) =>
+            dispatch({ type: "LOAD_TRACE", payload: { text } })
+          }
+          onSelectExample={(exampleId) =>
+            dispatch({ type: "LOAD_EXAMPLE_TRACE", payload: { exampleId } })
+          }
         />
       }
       statsPanel={
@@ -91,8 +108,18 @@ function AppContent() {
           totalOps={state.parseResult.ops.length}
         />
       }
-      cachePanel={<CacheVisualizationPanel levels={state.simState.levels} events={state.simState.events} />}
-      memoryPanel={<MemoryPanel memory={state.simState.memory} events={state.simState.events} />}
+      cachePanel={
+        <CacheVisualizationPanel
+          levels={state.simState.levels}
+          events={state.simState.events}
+        />
+      }
+      memoryPanel={
+        <MemoryPanel
+          memory={state.simState.memory}
+          events={state.simState.events}
+        />
+      }
       timelinePanel={<EventTimelinePanel events={state.simState.events} />}
     />
   );

@@ -1,61 +1,61 @@
 import type { CacheLevelConfig, ValidationIssue } from "../../domain/types";
+import {
+  GEOMETRY_SIZE_OPTIONS,
+  ASSOCIATIVITY_OPTIONS,
+  toSliderIndex,
+  fromSliderIndex,
+  formatBytesLabel,
+  formatWaysLabel
+} from "./sliderDomain";
+import { getSoftLimitBounds } from "./softLimits";
 
 type HierarchyBuilderPanelProps = {
   levels: CacheLevelConfig[];
   warnings: ValidationIssue[];
-  onUpdateLevel: (levelId: CacheLevelConfig["id"], patch: Partial<Omit<CacheLevelConfig, "id">>) => void;
+  errors?: ValidationIssue[];
+  onUpdateLevel: (
+    levelId: CacheLevelConfig["id"],
+    patch: Partial<Omit<CacheLevelConfig, "id">>
+  ) => void;
 };
 
-function nearestPowerOfTwo(value: number): number {
-  if (!Number.isFinite(value) || value <= 1) {
-    return 1;
-  }
-
-  let upperBound = 1;
-  while (upperBound < value && upperBound < Number.MAX_SAFE_INTEGER / 2) {
-    upperBound *= 2;
-  }
-
-  const lowerBound = Math.max(1, upperBound / 2);
-  return value - lowerBound < upperBound - value ? lowerBound : upperBound;
+function getFieldErrors(
+  errors: ValidationIssue[],
+  levelId: string,
+  field: "totalSizeBytes" | "blockSizeBytes" | "associativity"
+): ValidationIssue[] {
+  return errors.filter((error) => {
+    if (error.levelId !== levelId) return false;
+    if (error.code === "HIERARCHY_MONOTONICITY" && field === "totalSizeBytes")
+      return true;
+    if (error.code === "BLOCK_SIZE_MONOTONICITY" && field === "blockSizeBytes")
+      return true;
+    if (error.code === "GEOMETRY_INCONSISTENT") {
+      if (field === "totalSizeBytes" && error.message.includes("numSets"))
+        return true;
+      if (
+        field === "totalSizeBytes" &&
+        error.message.includes("totalSizeBytes")
+      )
+        return true;
+      if (
+        field === "blockSizeBytes" &&
+        error.message.includes("blockSizeBytes")
+      )
+        return true;
+      if (field === "associativity" && error.message.includes("associativity"))
+        return true;
+    }
+    return false;
+  });
 }
 
-function positiveIntegerOrFallback(value: number, fallback: number): number {
-  const rounded = Math.round(value);
-  return Number.isSafeInteger(rounded) && rounded > 0 ? rounded : fallback;
-}
-
-function normalizeGeometryPatch(
-  level: CacheLevelConfig,
-  patch: Pick<Partial<CacheLevelConfig>, "totalSizeBytes" | "blockSizeBytes" | "associativity">,
-): Pick<CacheLevelConfig, "totalSizeBytes" | "blockSizeBytes" | "associativity"> {
-  const currentBlockSize = nearestPowerOfTwo(positiveIntegerOrFallback(level.blockSizeBytes, 1));
-  const currentAssociativity = nearestPowerOfTwo(positiveIntegerOrFallback(level.associativity, 1));
-
-  const nextBlockSize =
-    patch.blockSizeBytes === undefined
-      ? currentBlockSize
-      : nearestPowerOfTwo(positiveIntegerOrFallback(patch.blockSizeBytes, currentBlockSize));
-  const nextAssociativity =
-    patch.associativity === undefined
-      ? currentAssociativity
-      : nearestPowerOfTwo(positiveIntegerOrFallback(patch.associativity, currentAssociativity));
-
-  const rawTotalSize =
-    patch.totalSizeBytes === undefined
-      ? positiveIntegerOrFallback(level.totalSizeBytes, nextBlockSize * nextAssociativity)
-      : positiveIntegerOrFallback(patch.totalSizeBytes, level.totalSizeBytes);
-  const geometryUnit = nextBlockSize * nextAssociativity;
-  const targetSetCount = nearestPowerOfTwo(rawTotalSize / geometryUnit);
-
-  return {
-    blockSizeBytes: nextBlockSize,
-    associativity: nextAssociativity,
-    totalSizeBytes: geometryUnit * targetSetCount,
-  };
-}
-
-export function HierarchyBuilderPanel({ levels, warnings, onUpdateLevel }: HierarchyBuilderPanelProps) {
+export function HierarchyBuilderPanel({
+  levels,
+  warnings,
+  errors = [],
+  onUpdateLevel
+}: HierarchyBuilderPanelProps) {
   const enabledCount = levels.filter((level) => level.enabled).length;
 
   return (
@@ -63,103 +63,257 @@ export function HierarchyBuilderPanel({ levels, warnings, onUpdateLevel }: Hiera
       {warnings.length > 0 ? (
         <ul className="warning-list" aria-label="Policy warnings">
           {warnings.map((warning, index) => (
-            <li key={`${warning.levelId}-${warning.code}-${index}`}>{warning.message}</li>
+            <li key={`${warning.levelId}-${warning.code}-${index}`}>
+              {warning.message}
+            </li>
           ))}
         </ul>
       ) : null}
 
-      {levels.map((level) => (
-        <fieldset key={level.id} className="panel-fieldset">
-          <legend>{level.id}</legend>
-          <label>
-            <span>Enabled</span>
-            <input
-              type="checkbox"
-              checked={level.enabled}
-              disabled={level.enabled && enabledCount === 1}
-              onChange={(event) => onUpdateLevel(level.id, { enabled: event.currentTarget.checked })}
-            />
-          </label>
-          <label>
-            <span>Total size (bytes)</span>
-            <input
-              aria-label={`${level.id} total size bytes`}
-              type="number"
-              value={level.totalSizeBytes}
-              onChange={(event) =>
-                onUpdateLevel(level.id, normalizeGeometryPatch(level, { totalSizeBytes: Number(event.currentTarget.value) }))
-              }
-            />
-          </label>
-          <label>
-            <span>Block size (bytes)</span>
-            <input
-              aria-label={`${level.id} block size bytes`}
-              type="number"
-              value={level.blockSizeBytes}
-              onChange={(event) =>
-                onUpdateLevel(level.id, normalizeGeometryPatch(level, { blockSizeBytes: Number(event.currentTarget.value) }))
-              }
-            />
-          </label>
-          <label>
-            <span>Associativity</span>
-            <input
-              aria-label={`${level.id} associativity`}
-              type="number"
-              value={level.associativity}
-              onChange={(event) =>
-                onUpdateLevel(level.id, normalizeGeometryPatch(level, { associativity: Number(event.currentTarget.value) }))
-              }
-            />
-          </label>
-          <label>
-            <span>Replacement policy</span>
-            <select
-              aria-label={`${level.id} replacement policy`}
-              value={level.replacementPolicy}
-              onChange={(event) =>
-                onUpdateLevel(level.id, {
-                  replacementPolicy: event.currentTarget.value as CacheLevelConfig["replacementPolicy"],
-                })
-              }
-            >
-              <option value="LRU">LRU</option>
-              <option value="FIFO">FIFO</option>
-            </select>
-          </label>
-          <label>
-            <span>Write hit policy</span>
-            <select
-              aria-label={`${level.id} write hit policy`}
-              value={level.writeHitPolicy}
-              onChange={(event) =>
-                onUpdateLevel(level.id, {
-                  writeHitPolicy: event.currentTarget.value as CacheLevelConfig["writeHitPolicy"],
-                })
-              }
-            >
-              <option value="WRITE_BACK">WRITE_BACK</option>
-              <option value="WRITE_THROUGH">WRITE_THROUGH</option>
-            </select>
-          </label>
-          <label>
-            <span>Write miss policy</span>
-            <select
-              aria-label={`${level.id} write miss policy`}
-              value={level.writeMissPolicy}
-              onChange={(event) =>
-                onUpdateLevel(level.id, {
-                  writeMissPolicy: event.currentTarget.value as CacheLevelConfig["writeMissPolicy"],
-                })
-              }
-            >
-              <option value="WRITE_ALLOCATE">WRITE_ALLOCATE</option>
-              <option value="WRITE_NO_ALLOCATE">WRITE_NO_ALLOCATE</option>
-            </select>
-          </label>
-        </fieldset>
-      ))}
+      {levels.map((level) => {
+        const totalSizeErrors = getFieldErrors(
+          errors,
+          level.id,
+          "totalSizeBytes"
+        );
+        const blockSizeErrors = getFieldErrors(
+          errors,
+          level.id,
+          "blockSizeBytes"
+        );
+        const associativityErrors = getFieldErrors(
+          errors,
+          level.id,
+          "associativity"
+        );
+
+        const totalSizeBounds = getSoftLimitBounds(
+          levels,
+          level.id,
+          "totalSizeBytes"
+        );
+        const blockSizeBounds = getSoftLimitBounds(
+          levels,
+          level.id,
+          "blockSizeBytes"
+        );
+
+        const totalSizeIndex = toSliderIndex(
+          level.totalSizeBytes,
+          GEOMETRY_SIZE_OPTIONS
+        );
+        const blockSizeIndex = toSliderIndex(
+          level.blockSizeBytes,
+          GEOMETRY_SIZE_OPTIONS
+        );
+        const associativityIndex = toSliderIndex(
+          level.associativity,
+          ASSOCIATIVITY_OPTIONS
+        );
+
+        // Soft-invalid shading: compute percentage of invalid lower region
+        let totalSizeSoftInvalid = false;
+        let totalSizeInvalidEndPct = 0;
+        if (totalSizeBounds.minExclusive !== null) {
+          const minInvalidIndex = GEOMETRY_SIZE_OPTIONS.findIndex(
+            (v) => v > totalSizeBounds.minExclusive!
+          );
+          const boundaryIndex =
+            minInvalidIndex >= 0
+              ? minInvalidIndex - 1
+              : GEOMETRY_SIZE_OPTIONS.length - 1;
+          if (totalSizeIndex <= boundaryIndex) {
+            totalSizeSoftInvalid = true;
+          }
+          if (boundaryIndex >= 0) {
+            totalSizeInvalidEndPct =
+              (boundaryIndex / (GEOMETRY_SIZE_OPTIONS.length - 1)) * 100;
+          }
+        }
+
+        let blockSizeSoftInvalid = false;
+        let blockSizeInvalidEndPct = 0;
+        if (blockSizeBounds.minInclusive !== null) {
+          const boundaryIndex =
+            GEOMETRY_SIZE_OPTIONS.findIndex(
+              (v) => v >= blockSizeBounds.minInclusive!
+            ) - 1;
+          if (boundaryIndex >= 0 && blockSizeIndex < boundaryIndex) {
+            blockSizeSoftInvalid = true;
+          }
+          if (boundaryIndex >= 0) {
+            blockSizeInvalidEndPct =
+              (boundaryIndex / (GEOMETRY_SIZE_OPTIONS.length - 1)) * 100;
+          }
+        }
+
+        return (
+          <fieldset key={level.id} className="panel-fieldset">
+            <legend>{level.id}</legend>
+            <label>
+              <span>Enabled</span>
+              <input
+                type="checkbox"
+                checked={level.enabled}
+                disabled={level.enabled && enabledCount === 1}
+                onChange={(event) =>
+                  onUpdateLevel(level.id, {
+                    enabled: event.currentTarget.checked
+                  })
+                }
+              />
+            </label>
+
+            <div className="slider-field">
+              <label>
+                <span>
+                  Total size: {formatBytesLabel(level.totalSizeBytes)}
+                </span>
+                <input
+                  aria-label={`${level.id} total size bytes`}
+                  aria-invalid={totalSizeErrors.length > 0}
+                  type="range"
+                  min={0}
+                  max={GEOMETRY_SIZE_OPTIONS.length - 1}
+                  value={totalSizeIndex}
+                  data-soft-invalid={totalSizeSoftInvalid ? "true" : "false"}
+                  style={
+                    {
+                      "--invalid-end-pct": `${totalSizeInvalidEndPct}%`
+                    } as React.CSSProperties
+                  }
+                  onChange={(event) =>
+                    onUpdateLevel(level.id, {
+                      totalSizeBytes: fromSliderIndex(
+                        Number(event.currentTarget.value),
+                        GEOMETRY_SIZE_OPTIONS
+                      )
+                    })
+                  }
+                />
+              </label>
+              {totalSizeErrors.map((error, i) => (
+                <p key={i} className="field-error" role="alert">
+                  {error.message}
+                </p>
+              ))}
+            </div>
+
+            <div className="slider-field">
+              <label>
+                <span>
+                  Block size: {formatBytesLabel(level.blockSizeBytes)}
+                </span>
+                <input
+                  aria-label={`${level.id} block size bytes`}
+                  aria-invalid={blockSizeErrors.length > 0}
+                  type="range"
+                  min={0}
+                  max={GEOMETRY_SIZE_OPTIONS.length - 1}
+                  value={blockSizeIndex}
+                  data-soft-invalid={blockSizeSoftInvalid ? "true" : "false"}
+                  style={
+                    {
+                      "--invalid-end-pct": `${blockSizeInvalidEndPct}%`
+                    } as React.CSSProperties
+                  }
+                  onChange={(event) =>
+                    onUpdateLevel(level.id, {
+                      blockSizeBytes: fromSliderIndex(
+                        Number(event.currentTarget.value),
+                        GEOMETRY_SIZE_OPTIONS
+                      )
+                    })
+                  }
+                />
+              </label>
+              {blockSizeErrors.map((error, i) => (
+                <p key={i} className="field-error" role="alert">
+                  {error.message}
+                </p>
+              ))}
+            </div>
+
+            <div className="slider-field">
+              <label>
+                <span>
+                  Associativity: {formatWaysLabel(level.associativity)}
+                </span>
+                <input
+                  aria-label={`${level.id} associativity`}
+                  aria-invalid={associativityErrors.length > 0}
+                  type="range"
+                  min={0}
+                  max={ASSOCIATIVITY_OPTIONS.length - 1}
+                  value={associativityIndex}
+                  onChange={(event) =>
+                    onUpdateLevel(level.id, {
+                      associativity: fromSliderIndex(
+                        Number(event.currentTarget.value),
+                        ASSOCIATIVITY_OPTIONS
+                      )
+                    })
+                  }
+                />
+              </label>
+              {associativityErrors.map((error, i) => (
+                <p key={i} className="field-error" role="alert">
+                  {error.message}
+                </p>
+              ))}
+            </div>
+
+            <label>
+              <span>Replacement policy</span>
+              <select
+                aria-label={`${level.id} replacement policy`}
+                value={level.replacementPolicy}
+                onChange={(event) =>
+                  onUpdateLevel(level.id, {
+                    replacementPolicy: event.currentTarget
+                      .value as CacheLevelConfig["replacementPolicy"]
+                  })
+                }
+              >
+                <option value="LRU">LRU</option>
+                <option value="FIFO">FIFO</option>
+              </select>
+            </label>
+            <label>
+              <span>Write hit policy</span>
+              <select
+                aria-label={`${level.id} write hit policy`}
+                value={level.writeHitPolicy}
+                onChange={(event) =>
+                  onUpdateLevel(level.id, {
+                    writeHitPolicy: event.currentTarget
+                      .value as CacheLevelConfig["writeHitPolicy"]
+                  })
+                }
+              >
+                <option value="WRITE_BACK">WRITE_BACK</option>
+                <option value="WRITE_THROUGH">WRITE_THROUGH</option>
+              </select>
+            </label>
+            <label>
+              <span>Write miss policy</span>
+              <select
+                aria-label={`${level.id} write miss policy`}
+                value={level.writeMissPolicy}
+                onChange={(event) =>
+                  onUpdateLevel(level.id, {
+                    writeMissPolicy: event.currentTarget
+                      .value as CacheLevelConfig["writeMissPolicy"]
+                  })
+                }
+              >
+                <option value="WRITE_ALLOCATE">WRITE_ALLOCATE</option>
+                <option value="WRITE_NO_ALLOCATE">WRITE_NO_ALLOCATE</option>
+              </select>
+            </label>
+          </fieldset>
+        );
+      })}
     </div>
   );
 }
