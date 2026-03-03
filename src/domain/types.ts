@@ -16,3 +16,15 @@ export type CacheLevelConfig = {
   writeHitPolicy: WriteHitPolicy;
   writeMissPolicy: WriteMissPolicy;
 };
+
+export type ValidationIssueCode =
+  | "GEOMETRY_INCONSISTENT"
+  | "HIERARCHY_MONOTONICITY"
+  | "BLOCK_SIZE_MONOTONICITY"
+  | "NON_STANDARD_POLICY";
+
+export type ValidationIssue = {
+  code: ValidationIssueCode;
+  levelId: CacheLevelId;
+  message: string;
+};
