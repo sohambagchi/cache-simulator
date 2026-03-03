@@ -8,6 +8,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
 }
 
 .app-shell {
@@ -53,6 +54,27 @@ h1 {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.theme-toggle {
+  margin-left: auto;
+  border: 1px solid var(--border-muted);
+  border-radius: 0.35rem;
+  background: var(--surface-accent);
+  color: var(--text-strong);
+  padding: 0.35rem 0.55rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.theme-toggle:hover {
+  background: var(--surface-muted);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--text-muted);
+  outline-offset: 2px;
 }
 
 .global-control-bar__status {

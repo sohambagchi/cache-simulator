@@ -1,4 +1,5 @@
 import type { Action } from "../../state/actions";
+import { ThemeToggle } from "../common/ThemeToggle";
 
 type GlobalControlBarProps = {
   canRun: boolean;
@@ -9,7 +10,12 @@ type GlobalControlBarProps = {
 
 export function GlobalControlBar({ canRun, isPlaying, statusMessage, onDispatch }: GlobalControlBarProps) {
   return (
-    <section className="global-control-bar" data-testid="global-control-bar" aria-label="Simulation controls">
+    <section
+      className="global-control-bar"
+      data-testid="global-control-bar"
+      data-playing={isPlaying ? "true" : "false"}
+      aria-label="Simulation controls"
+    >
       <div className="global-control-bar__buttons">
         <button data-action="step" type="button" disabled={!canRun} onClick={() => onDispatch({ type: "STEP" })}>
           Step
@@ -23,6 +29,7 @@ export function GlobalControlBar({ canRun, isPlaying, statusMessage, onDispatch 
         <button data-action="reset" type="button" onClick={() => onDispatch({ type: "RESET" })}>
           Reset
         </button>
+        <ThemeToggle />
       </div>
       {statusMessage ? <p className="global-control-bar__status">{statusMessage}</p> : null}
     </section>
