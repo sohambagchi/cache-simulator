@@ -36,52 +36,81 @@ export function CacheVisualizationPanel({ levels, events }: CacheVisualizationPa
         const levelEvent = latestLevelEvent(level.id);
 
         return (
-        <CollapsibleCard key={level.id} title={`${level.id} cache`} defaultExpanded={true} sectionId={`cache-${level.id}`}>
-          <div className="cache-level" data-active={activeLevelId === level.id ? "true" : "false"}>
-            {level.sets.map((set, setIndex) => {
-              const isActiveSet = levelEvent?.index === setIndex;
+          <CollapsibleCard key={level.id} title={`${level.id} cache`} defaultExpanded={true} sectionId={`cache-${level.id}`}>
+            <div className="cache-level" data-active={activeLevelId === level.id ? "true" : "false"}>
+              {level.sets.map((set, setIndex) => {
+                const isActiveSet = levelEvent?.index === setIndex;
 
-              return (
-              <div
-                key={`${level.id}-set-${setIndex}`}
-                className="cache-set"
-                data-set-index={String(setIndex)}
-                data-active-set={isActiveSet ? "true" : "false"}
-              >
-                <h4>Set {setIndex}</h4>
-                <ul>
-                  {set.ways.map((way, wayIndex) => {
-                    const key = `${level.id}-${setIndex}-${wayIndex}`;
-                    const showData = Boolean(revealedDataKeys[key]);
-                    const comparedWay = levelEvent?.comparedWays.find((entry) => entry.way === wayIndex);
-                    const isVictimWay = isActiveSet && levelEvent?.victimWay === wayIndex;
-                    const hasTagCue = isActiveSet && way.valid && levelEvent?.tag === way.tag;
+                return (
+                  <div
+                    key={`${level.id}-set-${setIndex}`}
+                    className="cache-set"
+                    data-set-index={String(setIndex)}
+                    data-active-set={isActiveSet ? "true" : "false"}
+                  >
+                    <h4>Set {setIndex}</h4>
+                    <table className="cache-set-table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Way</th>
+                          <th scope="col">V</th>
+                          <th scope="col">D</th>
+                          <th scope="col">Tag</th>
+                          <th scope="col">Data</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {set.ways.map((way, wayIndex) => {
+                          const key = `${level.id}-${setIndex}-${wayIndex}`;
+                          const showData = Boolean(revealedDataKeys[key]);
+                          const comparedWay = levelEvent?.comparedWays.find((entry) => entry.way === wayIndex);
+                          const isVictimWay = isActiveSet && levelEvent?.victimWay === wayIndex;
+                          const hasTagCue = isActiveSet && way.valid && levelEvent?.tag === way.tag;
+                          const wayStatusClassName = [
+                            "cache-way-row",
+                            way.valid ? "cache-way--valid" : "cache-way--invalid",
+                            way.dirty ? "cache-way--dirty" : "cache-way--clean",
+                          ].join(" ");
 
-                    return (
-                    <li
-                      key={`${level.id}-set-${setIndex}-way-${wayIndex}`}
-                      data-way-index={String(wayIndex)}
-                      data-victim-way={isVictimWay ? "true" : "false"}
-                      data-tag-match={hasTagCue ? "true" : "false"}
-                      data-compare-match={comparedWay?.match ? "true" : "false"}
-                    >
-                      W{wayIndex}: valid={String(way.valid)} dirty={String(way.dirty)} tag={way.tag}
-                      {showData ? ` data=${way.data}` : ""}
-                      <button
-                        data-action="toggle-block-data"
-                        type="button"
-                        onClick={() => toggleData(level.id, setIndex, wayIndex)}
-                      >
-                        {showData ? "Hide data" : "Show data"}
-                      </button>
-                    </li>
-                  );})}
-                </ul>
-              </div>
-            );})}
-          </div>
-        </CollapsibleCard>
-      );})}
+                          return (
+                            <tr
+                              key={`${level.id}-set-${setIndex}-way-${wayIndex}`}
+                              className={wayStatusClassName}
+                              data-way-index={String(wayIndex)}
+                              data-victim-way={isVictimWay ? "true" : "false"}
+                              data-tag-match={hasTagCue ? "true" : "false"}
+                              data-compare-match={comparedWay?.match ? "true" : "false"}
+                            >
+                              <td className="cache-cell cache-cell--way">W{wayIndex}</td>
+                              <td className={`cache-cell ${way.valid ? "cache-cell--valid-true" : "cache-cell--valid-false"}`}>
+                                {way.valid ? "1" : "0"}
+                              </td>
+                              <td className={`cache-cell ${way.dirty ? "cache-cell--dirty-true" : "cache-cell--dirty-false"}`}>
+                                {way.dirty ? "1" : "0"}
+                              </td>
+                              <td className="cache-cell cache-cell--tag">{way.tag}</td>
+                              <td className="cache-cell cache-cell--data">
+                                <span>{showData ? String(way.data) : "hidden"}</span>
+                                <button
+                                  data-action="toggle-block-data"
+                                  type="button"
+                                  onClick={() => toggleData(level.id, setIndex, wayIndex)}
+                                >
+                                  {showData ? "Hide data" : "Show data"}
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
+            </div>
+          </CollapsibleCard>
+        );
+      })}
     </div>
   );
 }

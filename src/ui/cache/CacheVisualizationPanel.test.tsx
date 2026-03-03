@@ -52,7 +52,7 @@ function createEvent(): SimEvent {
 }
 
 describe("CacheVisualizationPanel", () => {
-  it("renders all sets and hides payload until a block toggle is used", () => {
+  it("renders every set as a grid table and hides payload until a block toggle is used", () => {
     const host = document.createElement("div");
     const root = createRoot(host);
 
@@ -61,14 +61,22 @@ describe("CacheVisualizationPanel", () => {
     });
 
     expect(host.querySelectorAll(".cache-set").length).toBe(8);
-    expect(host.textContent).not.toContain("data=100");
+    const firstTable = host.querySelector('[data-set-index="0"] table');
+    expect(firstTable).not.toBeNull();
+    expect(firstTable?.textContent).toContain("Way");
+    expect(firstTable?.textContent).toContain("V");
+    expect(firstTable?.textContent).toContain("D");
+    expect(firstTable?.textContent).toContain("Tag");
+    expect(firstTable?.textContent).toContain("Data");
+    const dataPreview = host.querySelector('[data-set-index="0"] [data-way-index="0"] .cache-cell--data span');
+    expect(dataPreview?.textContent).toBe("hidden");
 
     const revealButton = host.querySelector('button[data-action="toggle-block-data"]');
     act(() => {
       revealButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(host.textContent).toContain("data=100");
+    expect(dataPreview?.textContent).toBe("100");
 
     act(() => {
       root.unmount();
@@ -88,6 +96,29 @@ describe("CacheVisualizationPanel", () => {
 
     expect(activeSet?.getAttribute("data-active-set")).toBe("true");
     expect(victimLine?.getAttribute("data-victim-way")).toBe("true");
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
+  it("applies validity and dirty status cues through state classes", () => {
+    const host = document.createElement("div");
+    const root = createRoot(host);
+    const level = createLevel(2);
+    level.sets[0].ways[0].valid = false;
+    level.sets[1].ways[0].dirty = true;
+
+    act(() => {
+      root.render(<CacheVisualizationPanel levels={[level]} events={[]} />);
+    });
+
+    const invalidWay = host.querySelector('[data-set-index="0"] [data-way-index="0"]');
+    const dirtyWay = host.querySelector('[data-set-index="1"] [data-way-index="0"]');
+
+    expect(invalidWay?.classList.contains("cache-way--invalid")).toBe(true);
+    expect(invalidWay?.classList.contains("cache-way--valid")).toBe(false);
+    expect(dirtyWay?.classList.contains("cache-way--dirty")).toBe(true);
 
     act(() => {
       root.unmount();
