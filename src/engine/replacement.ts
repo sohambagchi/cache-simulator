@@ -11,6 +11,10 @@ export function chooseVictimWay(
   candidates: ReplacementCandidate[],
   replacementPolicy: ReplacementPolicy,
 ): number {
+  if (candidates.length === 0) {
+    throw new Error("chooseVictimWay requires at least one candidate");
+  }
+
   const firstInvalid = candidates.find((candidate) => !candidate.valid);
   if (firstInvalid) {
     return firstInvalid.way;

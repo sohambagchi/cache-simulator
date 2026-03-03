@@ -20,6 +20,63 @@ function createLevel(
 }
 
 describe("simulateStep", () => {
+  it("fills cache on read miss so repeated read hits", () => {
+    const state0 = createInitialState([createLevel({ id: "L1" })]);
+    state0.memory[7] = 41;
+
+    const firstRead = simulateStep(state0, { kind: "R", address: 7 });
+    const secondRead = simulateStep(firstRead.state, { kind: "R", address: 7 });
+
+    expect(firstRead.events.some((event) => event.stage === "miss" && event.levelId === "L1")).toBe(true);
+    expect(firstRead.events.some((event) => event.stage === "fill" && event.levelId === "L1")).toBe(true);
+    expect(secondRead.events.some((event) => event.stage === "hit" && event.levelId === "L1")).toBe(true);
+    expect(secondRead.events.some((event) => event.stage === "memory")).toBe(false);
+    expect(secondRead.state.stats.hits).toBe(firstRead.state.stats.hits + 1);
+  });
+
+  it("applies replacement policy during read-driven fills", () => {
+    const state0 = createInitialState([createLevel({ id: "L1" })]);
+    state0.memory[0] = 11;
+    state0.memory[1] = 22;
+
+    const read0 = simulateStep(state0, { kind: "R", address: 0 });
+    const read1 = simulateStep(read0.state, { kind: "R", address: 1 });
+    const read0Again = simulateStep(read1.state, { kind: "R", address: 0 });
+
+    expect(read1.state.levels[0].sets[0].ways[0]).toMatchObject({ valid: true, tag: 1, data: 22 });
+    expect(read0Again.events.some((event) => event.stage === "miss" && event.levelId === "L1")).toBe(true);
+  });
+
+  it("emits ordered dirty eviction writeback events when read fill evicts dirty lines", () => {
+    const state0 = createInitialState([
+      createLevel({ id: "L1", writeHitPolicy: "WRITE_BACK", writeMissPolicy: "WRITE_ALLOCATE" }),
+      createLevel({ id: "L2", writeHitPolicy: "WRITE_BACK", writeMissPolicy: "WRITE_ALLOCATE" }),
+    ]);
+
+    const afterDirtyWrite = simulateStep(state0, { kind: "W", address: 0, value: 33 }).state;
+    const readMiss = simulateStep(afterDirtyWrite, { kind: "R", address: 1 });
+
+    const l1EvictionIndex = readMiss.events.findIndex(
+      (event) => event.stage === "eviction" && event.levelId === "L1",
+    );
+    const l1WritebackIndex = readMiss.events.findIndex(
+      (event) => event.stage === "writeback" && event.levelId === "L1",
+    );
+    const l1FillIndex = readMiss.events.findIndex((event) => event.stage === "fill" && event.levelId === "L1");
+
+    expect(l1EvictionIndex).toBeGreaterThan(-1);
+    expect(l1WritebackIndex).toBeGreaterThan(l1EvictionIndex);
+    expect(l1FillIndex).toBeGreaterThan(l1WritebackIndex);
+    expect(readMiss.events[l1EvictionIndex]).toMatchObject({
+      dirtyEvictionTarget: "L2",
+      victimWay: 0,
+    });
+    expect(readMiss.events[l1WritebackIndex]).toMatchObject({
+      dirtyEvictionTarget: "L2",
+      victimWay: 0,
+    });
+  });
+
   it("marks dirty on write-back hit and emits ordered dirty eviction cascade", () => {
     const state0 = createInitialState([
       createLevel({ id: "L1", writeHitPolicy: "WRITE_BACK", writeMissPolicy: "WRITE_ALLOCATE" }),

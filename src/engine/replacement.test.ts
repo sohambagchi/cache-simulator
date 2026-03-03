@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { chooseVictimWay } from "./replacement";
 
 describe("chooseVictimWay", () => {
+  it("throws clear error when candidate list is empty", () => {
+    expect(() => chooseVictimWay([], "LRU")).toThrowError(
+      "chooseVictimWay requires at least one candidate",
+    );
+  });
+
   it("prefers first invalid way before replacement policy", () => {
     expect(
       chooseVictimWay(

@@ -2,15 +2,7 @@ import { V1_LIMITS } from "../domain/constants";
 import type { WorkloadOp } from "../parser/parseWorkload";
 import { decodeAddress, encodeAddress } from "./addressing";
 import { dirtyEvictionTarget } from "./cascade";
-import type {
-  CacheLevelState,
-  CacheLineState,
-  ComparedWay,
-  SimEvent,
-  SimEventStage,
-  SimState,
-  SimStepResult,
-} from "./initialState";
+import type { CacheLineState, ComparedWay, SimEvent, SimState, SimStepResult } from "./initialState";
 import { chooseVictimWay } from "./replacement";
 
 type MutableStep = {
@@ -110,6 +102,95 @@ function setLine(
   if (values.setInsertedAt) {
     line.insertedAt = values.tick;
   }
+}
+
+function fillReadMissAtLevel(
+  mutable: MutableStep,
+  levelIndex: number,
+  address: number,
+  value: number,
+): void {
+  const level = mutable.nextState.levels[levelIndex];
+  const decoded = decodeAddress({
+    address,
+    offsetBits: level.geometry.offsetBits,
+    indexBits: level.geometry.indexBits,
+  });
+  const set = level.sets[decoded.index];
+  const victimWay = chooseVictimWay(
+    set.ways.map((way, wayIndex) => ({
+      way: wayIndex,
+      valid: way.valid,
+      lastUsedAt: way.lastUsedAt,
+      insertedAt: way.insertedAt,
+    })),
+    level.config.replacementPolicy,
+  );
+  const victim = set.ways[victimWay];
+
+  if (victim.valid) {
+    const target = dirtyEvictionTarget(mutable.nextState, levelIndex);
+    appendEvent(mutable, {
+      stage: "eviction",
+      levelId: level.id,
+      opKind: "R",
+      address,
+      tag: decoded.tag,
+      index: decoded.index,
+      offset: decoded.offset,
+      victimWay,
+      dirtyEvictionTarget: victim.dirty ? target : undefined,
+    });
+    mutable.nextState.stats.evictions += 1;
+
+    if (victim.dirty) {
+      const evictedAddress = encodeAddress({
+        tag: victim.tag,
+        index: decoded.index,
+        offset: 0,
+        offsetBits: level.geometry.offsetBits,
+        indexBits: level.geometry.indexBits,
+      });
+      const evictedDecoded = decodeAddress({
+        address: evictedAddress,
+        offsetBits: level.geometry.offsetBits,
+        indexBits: level.geometry.indexBits,
+      });
+
+      appendEvent(mutable, {
+        stage: "writeback",
+        levelId: level.id,
+        opKind: "R",
+        address: evictedAddress,
+        tag: evictedDecoded.tag,
+        index: evictedDecoded.index,
+        offset: evictedDecoded.offset,
+        victimWay,
+        dirtyEvictionTarget: target,
+      });
+      mutable.nextState.stats.writeBacks += 1;
+      forwardWrite(mutable, levelIndex + 1, evictedAddress, victim.data, "W");
+    }
+  }
+
+  appendEvent(mutable, {
+    stage: "fill",
+    levelId: level.id,
+    opKind: "R",
+    address,
+    tag: decoded.tag,
+    index: decoded.index,
+    offset: decoded.offset,
+    victimWay,
+  });
+
+  setLine(set.ways[victimWay], {
+    tag: decoded.tag,
+    value,
+    dirty: false,
+    tick: mutable.tick,
+    setInsertedAt: true,
+  });
 }
 
 function forwardWrite(
@@ -332,6 +413,9 @@ function applyRead(mutable: MutableStep, address: number): void {
     return;
   }
 
+  let sourceValue = mutable.nextState.memory[address];
+  let resolvedLevelIndex = mutable.nextState.levels.length;
+
   for (let levelIndex = 0; levelIndex < mutable.nextState.levels.length; levelIndex += 1) {
     const level = mutable.nextState.levels[levelIndex];
     const decoded = decodeAddress({
@@ -364,6 +448,8 @@ function applyRead(mutable: MutableStep, address: number): void {
     });
 
     if (hitWay !== undefined) {
+      sourceValue = set.ways[hitWay].data;
+      resolvedLevelIndex = levelIndex;
       appendEvent(mutable, {
         stage: "hit",
         levelId: level.id,
@@ -375,7 +461,7 @@ function applyRead(mutable: MutableStep, address: number): void {
       });
       set.ways[hitWay].lastUsedAt = mutable.tick;
       mutable.nextState.stats.hits += 1;
-      return;
+      break;
     }
 
     appendEvent(mutable, {
@@ -393,13 +479,19 @@ function applyRead(mutable: MutableStep, address: number): void {
     }
   }
 
-  const lastLevel = mutable.nextState.levels[mutable.nextState.levels.length - 1];
-  const lastDecoded = decodeAddress({
-    address,
-    offsetBits: lastLevel.geometry.offsetBits,
-    indexBits: lastLevel.geometry.indexBits,
-  });
-  writeMemory(mutable, "R", address, mutable.nextState.memory[address], lastDecoded);
+  if (resolvedLevelIndex === mutable.nextState.levels.length) {
+    const lastLevel = mutable.nextState.levels[mutable.nextState.levels.length - 1];
+    const lastDecoded = decodeAddress({
+      address,
+      offsetBits: lastLevel.geometry.offsetBits,
+      indexBits: lastLevel.geometry.indexBits,
+    });
+    writeMemory(mutable, "R", address, sourceValue, lastDecoded);
+  }
+
+  for (let levelIndex = resolvedLevelIndex - 1; levelIndex >= 0; levelIndex -= 1) {
+    fillReadMissAtLevel(mutable, levelIndex, address, sourceValue);
+  }
 }
 
 export function simulateStep(state: SimState, op: WorkloadOp): SimStepResult {
