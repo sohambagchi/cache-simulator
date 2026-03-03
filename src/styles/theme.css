@@ -2,4 +2,13 @@
   color-scheme: light;
   --bg: #f4f6f8;
   --text: #102033;
+  --text-strong: #102033;
+  --text-muted: #35506f;
+  --surface-card: #ffffff;
+  --surface-muted: #dfeaf3;
+  --border-muted: #9fb4c7;
+  --border-subtle: #d3dde6;
+  --status-error-text: #7f1724;
+  --status-warning-text: #9a3412;
+  --status-warning-bg: #fff7ed;
 }

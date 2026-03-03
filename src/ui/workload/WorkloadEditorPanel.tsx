@@ -16,11 +16,17 @@ export function WorkloadEditorPanel({
   onChangeTrace,
   onSelectExample,
 }: WorkloadEditorPanelProps) {
+  const selectedExampleId = examples.find((example) => example.text === workloadText)?.id ?? "";
+
   return (
     <div className="panel-stack">
       <label>
         <span>Built-in example</span>
-        <select aria-label="Built-in example" defaultValue="" onChange={(event) => onSelectExample(event.currentTarget.value)}>
+        <select
+          aria-label="Built-in example"
+          value={selectedExampleId}
+          onChange={(event) => onSelectExample(event.currentTarget.value)}
+        >
           <option value="" disabled>
             Select an example
           </option>
@@ -39,7 +45,6 @@ export function WorkloadEditorPanel({
           value={workloadText}
           rows={8}
           onChange={(event) => onChangeTrace(event.currentTarget.value)}
-          onInput={(event) => onChangeTrace((event.target as HTMLTextAreaElement).value)}
         />
       </label>
 

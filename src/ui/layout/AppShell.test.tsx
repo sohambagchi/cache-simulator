@@ -31,12 +31,16 @@ describe("AppShell", () => {
     const statsButton = host.querySelector('button[aria-controls="stats-panel"]');
     const memoryButton = host.querySelector('button[aria-controls="memory-panel"]');
     const timelineButton = host.querySelector('button[aria-controls="timeline-panel"]');
+    const memoryPanel = host.querySelector("#memory-panel") as HTMLDivElement;
 
     expect(hierarchyButton?.getAttribute("aria-expanded")).toBe("true");
     expect(workloadButton?.getAttribute("aria-expanded")).toBe("true");
     expect(statsButton?.getAttribute("aria-expanded")).toBe("true");
     expect(memoryButton?.getAttribute("aria-expanded")).toBe("false");
     expect(timelineButton?.getAttribute("aria-expanded")).toBe("true");
+    expect(memoryPanel).toBeTruthy();
+    expect(memoryPanel.hidden).toBe(true);
+    expect(memoryPanel.getAttribute("aria-hidden")).toBe("true");
 
     act(() => {
       root.unmount();

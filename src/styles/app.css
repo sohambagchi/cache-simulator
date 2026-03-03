@@ -43,8 +43,8 @@ h1 {
 }
 
 .global-control-bar {
-  background: #fff;
-  border: 1px solid #9fb4c7;
+  background: var(--surface-card);
+  border: 1px solid var(--border-muted);
   border-radius: 0.5rem;
   padding: 0.75rem;
 }
@@ -57,22 +57,22 @@ h1 {
 
 .global-control-bar__status {
   margin: 0.5rem 0 0;
-  color: #7f1724;
+  color: var(--status-error-text);
   font-weight: 600;
 }
 
 .collapsible-card {
-  border: 1px solid #9fb4c7;
+  border: 1px solid var(--border-muted);
   border-radius: 0.5rem;
   overflow: clip;
-  background: #fff;
+  background: var(--surface-card);
 }
 
 .collapsible-card__toggle {
   width: 100%;
   border: 0;
-  background: #dfeaf3;
-  color: #102033;
+  background: var(--surface-muted);
+  color: var(--text-strong);
   text-align: left;
   font-weight: 700;
   padding: 0.65rem 0.75rem;
@@ -84,7 +84,7 @@ h1 {
 }
 
 .panel-fieldset {
-  border: 1px solid #d3dde6;
+  border: 1px solid var(--border-subtle);
   border-radius: 0.4rem;
   padding: 0.5rem;
 }
@@ -98,8 +98,8 @@ h1 {
 .warning-list {
   margin: 0;
   padding: 0.5rem 1rem;
-  color: #9a3412;
-  background: #fff7ed;
+  color: var(--status-warning-text);
+  background: var(--status-warning-bg);
 }
 
 .stats-grid {
@@ -111,7 +111,7 @@ h1 {
 
 .stats-grid dt {
   font-size: 0.8rem;
-  color: #35506f;
+  color: var(--text-muted);
 }
 
 .stats-grid dd {
