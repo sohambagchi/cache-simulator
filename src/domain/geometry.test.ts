@@ -33,4 +33,20 @@ describe("deriveGeometry", () => {
       "derived numSets must be a power of two",
     );
   });
+
+  it("throws for large non-power-of-two block size that overflows 32-bit bitwise checks", () => {
+    const largeNonPowerOfTwoBlockSize = 3 * 2 ** 32;
+
+    expect(() =>
+      deriveGeometry(largeNonPowerOfTwoBlockSize, largeNonPowerOfTwoBlockSize, 1),
+    ).toThrow("blockSizeBytes must be a power of two");
+  });
+
+  it("throws for large non-power-of-two numSets that overflows 32-bit bitwise checks", () => {
+    const largeNonPowerOfTwoNumSets = 3 * 2 ** 32;
+
+    expect(() => deriveGeometry(largeNonPowerOfTwoNumSets, 1, 1)).toThrow(
+      "derived numSets must be a power of two",
+    );
+  });
 });

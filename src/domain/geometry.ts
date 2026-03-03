@@ -9,7 +9,11 @@ function isPositiveInteger(value: number): boolean {
 }
 
 function isPowerOfTwo(value: number): boolean {
-  return value > 0 && (value & (value - 1)) === 0;
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    return false;
+  }
+
+  return Number.isInteger(Math.log2(value));
 }
 
 export function deriveGeometry(
