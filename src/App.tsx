@@ -10,11 +10,30 @@ import { MemoryPanel } from "./ui/memory/MemoryPanel";
 import { EventTimelinePanel } from "./ui/timeline/EventTimelinePanel";
 import { AppShell } from "./ui/layout/AppShell";
 import { BUILTIN_WORKLOAD_EXAMPLES } from "./workloads/examples";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { ThemeMode } from "./ui/common/ThemeToggle";
+
+function getInitialTheme(): ThemeMode {
+  if (typeof document === "undefined") {
+    return "light";
+  }
+
+  const currentTheme = document.documentElement.getAttribute("data-theme");
+  return currentTheme === "dark" || currentTheme === "light" ? currentTheme : "light";
+}
+
+function getNextTheme(theme: ThemeMode): ThemeMode {
+  return theme === "light" ? "dark" : "light";
+}
 
 function AppContent() {
   const { state, dispatch } = useStore();
   const canRun = selectCanRunSimulation(state);
+  const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!state.isPlaying) {
@@ -40,6 +59,8 @@ function AppContent() {
           canRun={canRun}
           isPlaying={state.isPlaying}
           statusMessage={state.statusMessage}
+          theme={theme}
+          onToggleTheme={() => setTheme((currentTheme) => getNextTheme(currentTheme))}
           onDispatch={dispatch}
         />
       }

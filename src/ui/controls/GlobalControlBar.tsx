@@ -1,14 +1,23 @@
 import type { Action } from "../../state/actions";
-import { ThemeToggle } from "../common/ThemeToggle";
+import { ThemeToggle, type ThemeMode } from "../common/ThemeToggle";
 
 type GlobalControlBarProps = {
   canRun: boolean;
   isPlaying: boolean;
   statusMessage?: string | null;
+  theme: ThemeMode;
+  onToggleTheme: () => void;
   onDispatch: (action: Action) => void;
 };
 
-export function GlobalControlBar({ canRun, isPlaying, statusMessage, onDispatch }: GlobalControlBarProps) {
+export function GlobalControlBar({
+  canRun,
+  isPlaying,
+  statusMessage,
+  theme,
+  onToggleTheme,
+  onDispatch,
+}: GlobalControlBarProps) {
   return (
     <section
       className="global-control-bar"
@@ -29,7 +38,7 @@ export function GlobalControlBar({ canRun, isPlaying, statusMessage, onDispatch 
         <button data-action="reset" type="button" onClick={() => onDispatch({ type: "RESET" })}>
           Reset
         </button>
-        <ThemeToggle />
+        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </div>
       {statusMessage ? <p className="global-control-bar__status">{statusMessage}</p> : null}
     </section>

@@ -1,13 +1,11 @@
-import { useEffect, useState } from "react";
+export type ThemeMode = "light" | "dark";
 
-type ThemeMode = "light" | "dark";
+type ThemeToggleProps = {
+  theme: ThemeMode;
+  onToggle: () => void;
+};
 
-export function ThemeToggle() {
-  const [theme, setTheme] = useState<ThemeMode>("light");
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
+export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
 
   return (
     <button
@@ -16,7 +14,7 @@ export function ThemeToggle() {
       data-testid="theme-toggle"
       aria-label="Toggle theme"
       aria-pressed={theme === "dark"}
-      onClick={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
+      onClick={onToggle}
     >
       Theme: {theme === "light" ? "Light" : "Dark"}
     </button>
