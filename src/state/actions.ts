@@ -3,6 +3,7 @@ import type { CacheLevelConfig, CacheLevelId } from "../domain/types";
 export type Action =
   | { type: "LOAD_EXAMPLE_TRACE"; payload: { exampleId: string } }
   | { type: "LOAD_TRACE"; payload: { text: string } }
+  | { type: "PLAY" }
   | { type: "STEP" }
   | { type: "PLAY_TICK" }
   | { type: "PAUSE" }

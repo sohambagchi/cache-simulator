@@ -7,6 +7,7 @@ import { BUILTIN_WORKLOAD_EXAMPLES } from "../workloads/examples";
 import type { Action } from "./actions";
 
 const PARSE_BLOCKING_MESSAGE = "Fix parse errors before running simulation.";
+const CONFIG_BLOCKING_MESSAGE = "Fix configuration errors to simulate.";
 
 const DEFAULT_CONFIG_LEVELS: CacheLevelConfig[] = [
   {
@@ -79,10 +80,11 @@ function resetForTrace(state: AppState, workloadText: string, parseResult: Workl
 }
 
 function runOneOperation(state: AppState): AppState {
-  if (state.parseResult.errors.length > 0) {
+  const blockingMessage = getRunBlockingMessage(state);
+  if (blockingMessage) {
     return {
       ...state,
-      statusMessage: PARSE_BLOCKING_MESSAGE,
+      statusMessage: blockingMessage,
     };
   }
 
@@ -108,6 +110,18 @@ function runOneOperation(state: AppState): AppState {
     nextOpIndex: state.nextOpIndex + 1,
     statusMessage: null,
   };
+}
+
+function getRunBlockingMessage(state: AppState): string | null {
+  if (state.parseResult.errors.length > 0) {
+    return PARSE_BLOCKING_MESSAGE;
+  }
+
+  if (state.validation.errors.length > 0) {
+    return CONFIG_BLOCKING_MESSAGE;
+  }
+
+  return null;
 }
 
 const initialWorkloadText = BUILTIN_WORKLOAD_EXAMPLES[0]?.text ?? "";
@@ -140,6 +154,22 @@ export function reducer(state: AppState, action: Action): AppState {
     case "LOAD_TRACE": {
       const parseResult = parseWorkload(action.payload.text);
       return resetForTrace(state, action.payload.text, parseResult);
+    }
+    case "PLAY": {
+      const blockingMessage = getRunBlockingMessage(state);
+      if (blockingMessage) {
+        return {
+          ...state,
+          isPlaying: false,
+          statusMessage: blockingMessage,
+        };
+      }
+
+      return {
+        ...state,
+        isPlaying: true,
+        statusMessage: null,
+      };
     }
     case "STEP":
       return runOneOperation(state);

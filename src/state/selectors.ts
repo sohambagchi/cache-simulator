@@ -1,7 +1,7 @@
 import type { AppState } from "./reducer";
 
 export function selectCanRunSimulation(state: AppState): boolean {
-  return state.parseResult.errors.length === 0;
+  return state.parseResult.errors.length === 0 && state.validation.errors.length === 0;
 }
 
 export function selectPreviewOperations(state: AppState) {
