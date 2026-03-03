@@ -347,6 +347,33 @@ function fillReadMissAtLevel(
     tick: mutable.tick,
     setInsertedAt: true
   });
+
+  // EXCLUSIVE: invalidate the block from level N+1 after filling it into level N
+  if (
+    mutable.nextState.inclusionPolicy === "EXCLUSIVE" &&
+    levelIndex + 1 < mutable.nextState.levels.length
+  ) {
+    const nextLevel = mutable.nextState.levels[levelIndex + 1];
+    const nextDecoded = decodeAddress({
+      address,
+      offsetBits: nextLevel.geometry.offsetBits,
+      indexBits: nextLevel.geometry.indexBits
+    });
+    const nextSet = nextLevel.sets[nextDecoded.index];
+    const invalidateWayIndex = nextSet.ways.findIndex(
+      (way) => way.valid && way.tag === nextDecoded.tag
+    );
+    if (invalidateWayIndex !== -1) {
+      const wayToInvalidate = nextSet.ways[invalidateWayIndex];
+      wayToInvalidate.valid = false;
+      wayToInvalidate.tag = 0;
+      wayToInvalidate.dirty = false;
+      wayToInvalidate.dataBytes = Array.from(
+        { length: wayToInvalidate.dataBytes.length },
+        () => 0
+      );
+    }
+  }
 }
 
 function forwardWrite(

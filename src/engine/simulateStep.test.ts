@@ -510,6 +510,82 @@ describe("simulateStep", () => {
     expect(result.state.stats.misses).toBe(missesBefore);
   });
 
+  it("EXCLUSIVE: block is invalidated from L2 when filled into L1", () => {
+    // L1: 16B (4 sets, 1 way, 4B blocks), L2: 64B (16 sets, 1 way, 4B blocks)
+    const state = createInitialState(
+      [
+        {
+          id: "L1",
+          enabled: true,
+          totalSizeBytes: 16,
+          blockSizeBytes: 4,
+          associativity: 1,
+          replacementPolicy: "LRU",
+          writeHitPolicy: "WRITE_BACK",
+          writeMissPolicy: "WRITE_ALLOCATE"
+        },
+        {
+          id: "L2",
+          enabled: true,
+          totalSizeBytes: 64,
+          blockSizeBytes: 4,
+          associativity: 1,
+          replacementPolicy: "LRU",
+          writeHitPolicy: "WRITE_BACK",
+          writeMissPolicy: "WRITE_ALLOCATE"
+        }
+      ],
+      "EXCLUSIVE"
+    );
+
+    // R 0: miss L1 and L2 → block fetched from memory, filled into L1.
+    // In EXCLUSIVE mode, L2 must NOT also hold it.
+    const r1 = simulateStep(state, { kind: "R", address: 0 });
+
+    const l1Line = r1.state.levels[0].sets[0].ways[0];
+    const l2Line = r1.state.levels[1].sets[0].ways[0];
+
+    expect(l1Line.valid).toBe(true);
+    // EXCLUSIVE: block moved to L1, so L2 set 0 should be invalid
+    expect(l2Line.valid).toBe(false);
+  });
+
+  it("EXCLUSIVE: repeated read of same address still hits L1 (not double-invalidated)", () => {
+    const state = createInitialState(
+      [
+        {
+          id: "L1",
+          enabled: true,
+          totalSizeBytes: 16,
+          blockSizeBytes: 4,
+          associativity: 1,
+          replacementPolicy: "LRU",
+          writeHitPolicy: "WRITE_BACK",
+          writeMissPolicy: "WRITE_ALLOCATE"
+        },
+        {
+          id: "L2",
+          enabled: true,
+          totalSizeBytes: 64,
+          blockSizeBytes: 4,
+          associativity: 1,
+          replacementPolicy: "LRU",
+          writeHitPolicy: "WRITE_BACK",
+          writeMissPolicy: "WRITE_ALLOCATE"
+        }
+      ],
+      "EXCLUSIVE"
+    );
+
+    const r1 = simulateStep(state, { kind: "R", address: 0 });
+    const r2 = simulateStep(r1.state, { kind: "R", address: 0 });
+
+    expect(r2.events.some((e) => e.stage === "hit" && e.levelId === "L1")).toBe(
+      true
+    );
+    expect(r2.events.some((e) => e.stage === "miss")).toBe(false);
+  });
+
   it("emits one memory event per written byte when dirty block writeback reaches memory", () => {
     const state0 = createInitialState([
       createLevel({
