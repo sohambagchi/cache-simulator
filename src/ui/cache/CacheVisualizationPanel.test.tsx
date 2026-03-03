@@ -4,11 +4,11 @@ import { describe, expect, it } from "vitest";
 import type { CacheLevelState, SimEvent } from "../../engine/initialState";
 import { CacheVisualizationPanel } from "./CacheVisualizationPanel";
 
-function createLevel(setCount: number): CacheLevelState {
+function createLevel(levelId: "L1" | "L2", setCount: number): CacheLevelState {
   return {
-    id: "L1",
+    id: levelId,
     config: {
-      id: "L1",
+      id: levelId,
       enabled: true,
       totalSizeBytes: 16,
       blockSizeBytes: 1,
@@ -48,6 +48,7 @@ function createEvent(): SimEvent {
     offset: 0,
     victimWay: 0,
     comparedWays: [],
+    operationId: 1,
   };
 }
 
@@ -57,7 +58,7 @@ describe("CacheVisualizationPanel", () => {
     const root = createRoot(host);
 
     act(() => {
-      root.render(<CacheVisualizationPanel levels={[createLevel(8)]} events={[]} />);
+      root.render(<CacheVisualizationPanel levels={[createLevel("L1", 8)]} events={[]} />);
     });
 
     expect(host.querySelectorAll(".cache-set").length).toBe(8);
@@ -88,7 +89,7 @@ describe("CacheVisualizationPanel", () => {
     const root = createRoot(host);
 
     act(() => {
-      root.render(<CacheVisualizationPanel levels={[createLevel(8)]} events={[createEvent()]} />);
+      root.render(<CacheVisualizationPanel levels={[createLevel("L1", 8)]} events={[createEvent()]} />);
     });
 
     const activeSet = host.querySelector('[data-set-index="3"]');
@@ -96,6 +97,7 @@ describe("CacheVisualizationPanel", () => {
 
     expect(activeSet?.getAttribute("data-active-set")).toBe("true");
     expect(victimLine?.getAttribute("data-victim-way")).toBe("true");
+    expect(victimLine?.classList.contains("cache-way--victim-cue")).toBe(true);
 
     act(() => {
       root.unmount();
@@ -105,7 +107,7 @@ describe("CacheVisualizationPanel", () => {
   it("applies validity and dirty status cues through state classes", () => {
     const host = document.createElement("div");
     const root = createRoot(host);
-    const level = createLevel(2);
+    const level = createLevel("L1", 2);
     level.sets[0].ways[0].valid = false;
     level.sets[1].ways[0].dirty = true;
 
@@ -119,6 +121,55 @@ describe("CacheVisualizationPanel", () => {
     expect(invalidWay?.classList.contains("cache-way--invalid")).toBe(true);
     expect(invalidWay?.classList.contains("cache-way--valid")).toBe(false);
     expect(dirtyWay?.classList.contains("cache-way--dirty")).toBe(true);
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
+  it("clears stale highlight cues from earlier operations", () => {
+    const host = document.createElement("div");
+    const root = createRoot(host);
+
+    const staleL2Event = {
+      stage: "eviction",
+      levelId: "L2",
+      opKind: "R",
+      address: 0,
+      tag: 3,
+      index: 3,
+      offset: 0,
+      victimWay: 0,
+      comparedWays: [],
+      operationId: 1,
+    } as SimEvent;
+
+    const currentL1Event = {
+      stage: "compare",
+      levelId: "L1",
+      opKind: "R",
+      address: 1,
+      tag: 1,
+      index: 1,
+      offset: 0,
+      comparedWays: [{ way: 0, valid: true, tag: 1, match: true }],
+      operationId: 2,
+    } as SimEvent;
+
+    act(() => {
+      root.render(
+        <CacheVisualizationPanel
+          levels={[createLevel("L1", 8), createLevel("L2", 8)]}
+          events={[staleL2Event, currentL1Event]}
+        />,
+      );
+    });
+
+    const staleSet = host.querySelector('[data-testid="cache-level-L2"] [data-set-index="3"]');
+    const staleVictim = host.querySelector('[data-testid="cache-level-L2"] [data-set-index="3"] [data-way-index="0"]');
+
+    expect(staleSet?.getAttribute("data-active-set")).toBe("false");
+    expect(staleVictim?.getAttribute("data-victim-way")).toBe("false");
 
     act(() => {
       root.unmount();

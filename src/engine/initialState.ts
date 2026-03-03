@@ -22,6 +22,7 @@ export type SimEventStage =
   | "memory";
 
 export type SimEvent = {
+  operationId: number;
   stage: SimEventStage;
   levelId: CacheLevelId | "MEMORY";
   opKind: "R" | "W";

@@ -96,6 +96,11 @@ h1 {
   font-weight: 600;
 }
 
+.global-control-bar__request-error {
+  margin: 0.5rem 0 0;
+  color: var(--status-error-text);
+}
+
 .collapsible-card {
   border: 1px solid var(--border-muted);
   border-radius: 0.5rem;
@@ -194,19 +199,23 @@ h1 {
   background: #f8f1e7;
 }
 
-.cache-set[data-active-set="true"] .cache-set-table {
+.cache-set[data-active-set="true"] .cache-set-table,
+.cache-set--active-cue .cache-set-table {
   border: 1px solid var(--border-muted);
 }
 
-.cache-way-row[data-victim-way="true"] {
+.cache-way-row[data-victim-way="true"],
+.cache-way--victim-cue {
   box-shadow: inset 0 0 0 2px #bc8f54;
 }
 
-.cache-way-row[data-tag-match="true"] {
+.cache-way-row[data-tag-match="true"],
+.cache-way--tag-cue {
   box-shadow: inset 0 0 0 2px #4f8f64;
 }
 
-.cache-way-row[data-compare-match="true"] {
+.cache-way-row[data-compare-match="true"],
+.cache-way--compare-cue {
   box-shadow: inset 0 0 0 2px #557e9f;
 }
 

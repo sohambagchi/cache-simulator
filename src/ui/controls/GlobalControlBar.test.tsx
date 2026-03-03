@@ -70,4 +70,39 @@ describe("GlobalControlBar", () => {
       root.unmount();
     });
   });
+
+  it("shows inline feedback and blocks submit when direct request input is invalid", () => {
+    const onDispatch = vi.fn();
+    const onToggleTheme = vi.fn();
+    const host = document.createElement("div");
+    const root = createRoot(host);
+
+    act(() => {
+      root.render(
+        <GlobalControlBar
+          canRun={true}
+          isPlaying={false}
+          theme="light"
+          onToggleTheme={onToggleTheme}
+          onDispatch={onDispatch}
+        />,
+      );
+    });
+
+    const addressInput = host.querySelector('input[aria-label="Request address"]') as HTMLInputElement;
+    const submitButton = host.querySelector('button[data-action="submit-request"]');
+
+    act(() => {
+      addressInput.value = "not-a-number";
+      addressInput.dispatchEvent(new Event("change", { bubbles: true }));
+      submitButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(onDispatch).not.toHaveBeenCalled();
+    expect(host.textContent).toContain("Enter a valid integer address.");
+
+    act(() => {
+      root.unmount();
+    });
+  });
 });

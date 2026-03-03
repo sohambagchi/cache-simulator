@@ -48,9 +48,10 @@ function runtimeDiagnostic(op: WorkloadOp): string | null {
 
 function appendEvent(
   mutable: MutableStep,
-  event: Omit<SimEvent, "comparedWays"> & { comparedWays?: ComparedWay[] },
+  event: Omit<SimEvent, "operationId" | "comparedWays"> & { comparedWays?: ComparedWay[] },
 ): void {
   mutable.events.push({
+    operationId: mutable.tick,
     ...event,
     comparedWays: event.comparedWays ?? [],
   });

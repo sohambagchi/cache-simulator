@@ -20,6 +20,7 @@ export function GlobalControlBar({
   onDispatch,
 }: GlobalControlBarProps) {
   const [requestKind, setRequestKind] = useState<"R" | "W">("R");
+  const [requestError, setRequestError] = useState<string | null>(null);
   const requestAddressRef = useRef<HTMLInputElement>(null);
   const requestValueRef = useRef<HTMLInputElement>(null);
 
@@ -27,10 +28,12 @@ export function GlobalControlBar({
     const requestAddress = requestAddressRef.current?.value ?? "0";
     const address = Number.parseInt(requestAddress, 10);
     if (!Number.isSafeInteger(address)) {
+      setRequestError("Enter a valid integer address.");
       return;
     }
 
     if (requestKind === "R") {
+      setRequestError(null);
       onDispatch({
         type: "SUBMIT_REQUEST",
         payload: {
@@ -46,9 +49,11 @@ export function GlobalControlBar({
     const requestValue = requestValueRef.current?.value ?? "0";
     const value = Number.parseInt(requestValue, 10);
     if (!Number.isSafeInteger(value)) {
+      setRequestError("Enter a valid integer value.");
       return;
     }
 
+    setRequestError(null);
     onDispatch({
       type: "SUBMIT_REQUEST",
       payload: {
@@ -89,7 +94,10 @@ export function GlobalControlBar({
           <select
             aria-label="Request kind"
             value={requestKind}
-            onChange={(event) => setRequestKind(event.currentTarget.value as "R" | "W")}
+            onChange={(event) => {
+              setRequestKind(event.currentTarget.value as "R" | "W");
+              setRequestError(null);
+            }}
           >
             <option value="R">R</option>
             <option value="W">W</option>
@@ -118,6 +126,11 @@ export function GlobalControlBar({
           Submit request
         </button>
       </div>
+      {requestError ? (
+        <p className="global-control-bar__request-error" role="status" aria-live="polite">
+          {requestError}
+        </p>
+      ) : null}
       {statusMessage ? <p className="global-control-bar__status">{statusMessage}</p> : null}
     </section>
   );

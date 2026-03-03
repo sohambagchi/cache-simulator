@@ -175,6 +175,7 @@ describe("simulateStep", () => {
     for (const event of result.events) {
       expect(event).toEqual(
         expect.objectContaining({
+          operationId: expect.any(Number),
           stage: expect.any(String),
           levelId: expect.any(String),
           opKind: "R",
