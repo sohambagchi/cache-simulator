@@ -9,4 +9,28 @@ describe("deriveGeometry", () => {
       indexBits: 3,
     });
   });
+
+  it("throws for non-positive total size", () => {
+    expect(() => deriveGeometry(0, 16, 2)).toThrow(
+      "totalSizeBytes must be a positive integer",
+    );
+  });
+
+  it("throws when total size is not divisible by block size", () => {
+    expect(() => deriveGeometry(250, 16, 2)).toThrow(
+      "totalSizeBytes must be divisible by blockSizeBytes",
+    );
+  });
+
+  it("throws when block size is not a power of two", () => {
+    expect(() => deriveGeometry(240, 24, 2)).toThrow(
+      "blockSizeBytes must be a power of two",
+    );
+  });
+
+  it("throws when derived numSets is not a power of two", () => {
+    expect(() => deriveGeometry(96, 16, 2)).toThrow(
+      "derived numSets must be a power of two",
+    );
+  });
 });
