@@ -24,6 +24,15 @@ export type WorkloadParseResult = {
   errors: WorkloadParseError[];
 };
 
+function outOfRangeMessage(
+  lineNumber: number,
+  field: "address" | "value",
+  min: number,
+  max: number,
+): string {
+  return `Line ${lineNumber}: ${field} out of range (expected ${min}..${max})`;
+}
+
 export function parseWorkload(input: string): WorkloadParseResult {
   const ops: WorkloadOp[] = [];
   const errors: WorkloadParseError[] = [];
@@ -61,7 +70,12 @@ export function parseWorkload(input: string): WorkloadParseResult {
       if (address < V1_LIMITS.minAddress || address > V1_LIMITS.maxAddress) {
         errors.push({
           line: lineNumber,
-          message: `Line ${lineNumber}: address out of range (expected 0..1023)`,
+          message: outOfRangeMessage(
+            lineNumber,
+            "address",
+            V1_LIMITS.minAddress,
+            V1_LIMITS.maxAddress,
+          ),
         });
         continue;
       }
@@ -91,7 +105,12 @@ export function parseWorkload(input: string): WorkloadParseResult {
       if (address < V1_LIMITS.minAddress || address > V1_LIMITS.maxAddress) {
         errors.push({
           line: lineNumber,
-          message: `Line ${lineNumber}: address out of range (expected 0..1023)`,
+          message: outOfRangeMessage(
+            lineNumber,
+            "address",
+            V1_LIMITS.minAddress,
+            V1_LIMITS.maxAddress,
+          ),
         });
         continue;
       }
@@ -108,7 +127,7 @@ export function parseWorkload(input: string): WorkloadParseResult {
       if (value < V1_LIMITS.minValue || value > V1_LIMITS.maxValue) {
         errors.push({
           line: lineNumber,
-          message: `Line ${lineNumber}: value out of range (expected 0..255)`,
+          message: outOfRangeMessage(lineNumber, "value", V1_LIMITS.minValue, V1_LIMITS.maxValue),
         });
         continue;
       }

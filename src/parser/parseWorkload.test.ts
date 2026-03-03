@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { V1_LIMITS } from "../domain/constants";
 import { parseWorkload } from "./parseWorkload";
 
 describe("parseWorkload", () => {
@@ -44,24 +45,26 @@ describe("parseWorkload", () => {
 
   it("emits explicit out-of-range diagnostics for address and value", () => {
     const result = parseWorkload("R -1\nR 1024\nW 4 256\nW 4 -1");
+    const expectedAddressRange = `${V1_LIMITS.minAddress}..${V1_LIMITS.maxAddress}`;
+    const expectedValueRange = `${V1_LIMITS.minValue}..${V1_LIMITS.maxValue}`;
 
     expect(result.ops).toEqual([]);
     expect(result.errors).toEqual([
       {
         line: 1,
-        message: "Line 1: address out of range (expected 0..1023)",
+        message: `Line 1: address out of range (expected ${expectedAddressRange})`,
       },
       {
         line: 2,
-        message: "Line 2: address out of range (expected 0..1023)",
+        message: `Line 2: address out of range (expected ${expectedAddressRange})`,
       },
       {
         line: 3,
-        message: "Line 3: value out of range (expected 0..255)",
+        message: `Line 3: value out of range (expected ${expectedValueRange})`,
       },
       {
         line: 4,
-        message: "Line 4: value out of range (expected 0..255)",
+        message: `Line 4: value out of range (expected ${expectedValueRange})`,
       },
     ]);
   });
