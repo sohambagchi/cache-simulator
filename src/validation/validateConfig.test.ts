@@ -17,6 +17,20 @@ function createLevel(overrides: Partial<CacheLevelConfig>): CacheLevelConfig {
 }
 
 describe("validateConfig", () => {
+  it("requires at least one enabled cache level", () => {
+    const result = validateConfig([
+      createLevel({ id: "L1", enabled: false }),
+      createLevel({ id: "L2", enabled: false }),
+      createLevel({ id: "L3", enabled: false }),
+    ]);
+
+    expect(result.errors).toContainEqual({
+      code: "ACTIVE_LEVELS_MIN",
+      levelId: "L1",
+      message: "At least one cache level must be enabled",
+    });
+  });
+
   it("returns no errors or warnings for valid monotonic hierarchy", () => {
     const result = validateConfig([
       createLevel({ id: "L1", totalSizeBytes: 1024, blockSizeBytes: 64, associativity: 2 }),
@@ -158,7 +172,13 @@ describe("validateConfig", () => {
       createLevel({ id: "L1", enabled: false, totalSizeBytes: 1536, blockSizeBytes: 24, associativity: 3 }),
     ]);
 
-    expect(result.errors).toEqual([]);
+    expect(result.errors).toEqual([
+      {
+        code: "ACTIVE_LEVELS_MIN",
+        levelId: "L1",
+        message: "At least one cache level must be enabled",
+      },
+    ]);
     expect(result.warnings).toEqual([]);
   });
 });

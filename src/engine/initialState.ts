@@ -2,6 +2,8 @@ import { V1_LIMITS } from "../domain/constants";
 import { deriveGeometry, type CacheGeometry } from "../domain/geometry";
 import type { CacheLevelConfig, CacheLevelId } from "../domain/types";
 
+export type PerLevelStats = Record<CacheLevelId, { hits: number; misses: number; evictions: number }>;
+
 export type ComparedWay = {
   way: number;
   valid: boolean;
@@ -61,7 +63,16 @@ export type SimStats = {
   writeBacks: number;
   memoryReads: number;
   memoryWrites: number;
+  perLevel: PerLevelStats;
 };
+
+function createPerLevelStats(): PerLevelStats {
+  return {
+    L1: { hits: 0, misses: 0, evictions: 0 },
+    L2: { hits: 0, misses: 0, evictions: 0 },
+    L3: { hits: 0, misses: 0, evictions: 0 },
+  };
+}
 
 export type SimState = {
   levels: CacheLevelState[];
@@ -99,6 +110,7 @@ function createStats(): SimStats {
     writeBacks: 0,
     memoryReads: 0,
     memoryWrites: 0,
+    perLevel: createPerLevelStats(),
   };
 }
 

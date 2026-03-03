@@ -83,6 +83,7 @@ function AppContent() {
       statsPanel={
         <StatsPanel
           stats={state.simState.stats}
+          levels={state.simState.levels.map((level) => level.id)}
           nextOpIndex={state.nextOpIndex}
           totalOps={state.parseResult.ops.length}
         />

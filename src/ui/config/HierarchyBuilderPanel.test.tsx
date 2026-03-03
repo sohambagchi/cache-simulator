@@ -63,6 +63,27 @@ function Harness({ warnings = [] }: { warnings?: ValidationIssue[] }) {
 }
 
 describe("HierarchyBuilderPanel", () => {
+  it("disables enabled toggle for the final active level", () => {
+    const host = document.createElement("div");
+    const root = createRoot(host);
+    const levels = [
+      { ...createLevels()[0], enabled: true },
+      { ...createLevels()[1], enabled: false },
+      { ...createLevels()[2], enabled: false },
+    ];
+
+    act(() => {
+      root.render(<HierarchyBuilderPanel levels={levels} warnings={[]} onUpdateLevel={() => undefined} />);
+    });
+
+    const l1Toggle = host.querySelector("fieldset input[type='checkbox']") as HTMLInputElement;
+    expect(l1Toggle.disabled).toBe(true);
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
   it("renders separate per-level write-hit and write-miss controls without cross-level mutation", () => {
     const host = document.createElement("div");
     const root = createRoot(host);

@@ -7,6 +7,8 @@ type HierarchyBuilderPanelProps = {
 };
 
 export function HierarchyBuilderPanel({ levels, warnings, onUpdateLevel }: HierarchyBuilderPanelProps) {
+  const enabledCount = levels.filter((level) => level.enabled).length;
+
   return (
     <div className="panel-stack">
       {warnings.length > 0 ? (
@@ -25,6 +27,7 @@ export function HierarchyBuilderPanel({ levels, warnings, onUpdateLevel }: Hiera
             <input
               type="checkbox"
               checked={level.enabled}
+              disabled={level.enabled && enabledCount === 1}
               onChange={(event) => onUpdateLevel(level.id, { enabled: event.currentTarget.checked })}
             />
           </label>

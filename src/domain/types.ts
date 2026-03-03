@@ -18,6 +18,7 @@ export type CacheLevelConfig = {
 };
 
 export type ValidationIssueCode =
+  | "ACTIVE_LEVELS_MIN"
   | "GEOMETRY_INCONSISTENT"
   | "HIERARCHY_MONOTONICITY"
   | "BLOCK_SIZE_MONOTONICITY"

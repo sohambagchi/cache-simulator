@@ -1,7 +1,7 @@
 import type { CacheLevelConfig } from "../domain/types";
 import { createInitialState, type SimState } from "../engine/initialState";
 import { simulateStep } from "../engine/simulateStep";
-import { parseWorkload, type WorkloadParseResult } from "../parser/parseWorkload";
+import { parseWorkload, type WorkloadOp, type WorkloadParseResult } from "../parser/parseWorkload";
 import { validateConfig } from "../validation/validateConfig";
 import { BUILTIN_WORKLOAD_EXAMPLES } from "../workloads/examples";
 import type { Action } from "./actions";
@@ -96,6 +96,11 @@ function runOneOperation(state: AppState): AppState {
     };
   }
 
+  return runOperation(state, operation, true);
+}
+
+function runOperation(state: AppState, operation: WorkloadOp, incrementOpIndex: boolean): AppState {
+
   const result = simulateStep(state.simState, operation);
   if (result.diagnostic) {
     return {
@@ -107,9 +112,13 @@ function runOneOperation(state: AppState): AppState {
   return {
     ...state,
     simState: result.state,
-    nextOpIndex: state.nextOpIndex + 1,
+    nextOpIndex: incrementOpIndex ? state.nextOpIndex + 1 : state.nextOpIndex,
     statusMessage: null,
   };
+}
+
+function getEnabledLevelCount(configLevels: CacheLevelConfig[]): number {
+  return configLevels.filter((level) => level.enabled).length;
 }
 
 function getRunBlockingMessage(state: AppState): string | null {
@@ -175,6 +184,16 @@ export function reducer(state: AppState, action: Action): AppState {
       return runOneOperation(state);
     case "PLAY_TICK":
       return runOneOperation(state);
+    case "SUBMIT_REQUEST": {
+      if (state.validation.errors.length > 0) {
+        return {
+          ...state,
+          statusMessage: CONFIG_BLOCKING_MESSAGE,
+        };
+      }
+
+      return runOperation(state, action.payload.request, false);
+    }
     case "PAUSE":
       return {
         ...state,
@@ -189,14 +208,19 @@ export function reducer(state: AppState, action: Action): AppState {
         statusMessage: null,
       };
     case "UPDATE_CONFIG": {
+      const enabledCount = getEnabledLevelCount(state.configLevels);
       const configLevels = state.configLevels.map((level) => {
         if (level.id !== action.payload.levelId) {
           return level;
         }
 
+        const requestedEnabled = action.payload.patch.enabled;
+        const shouldKeepEnabled = requestedEnabled === false && level.enabled && enabledCount === 1;
+
         return {
           ...level,
           ...action.payload.patch,
+          enabled: shouldKeepEnabled ? true : (requestedEnabled ?? level.enabled),
           id: level.id,
         };
       });

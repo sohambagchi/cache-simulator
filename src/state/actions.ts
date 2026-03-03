@@ -1,4 +1,5 @@
 import type { CacheLevelConfig, CacheLevelId } from "../domain/types";
+import type { WorkloadOp } from "../parser/parseWorkload";
 
 export type Action =
   | { type: "LOAD_EXAMPLE_TRACE"; payload: { exampleId: string } }
@@ -6,6 +7,7 @@ export type Action =
   | { type: "PLAY" }
   | { type: "STEP" }
   | { type: "PLAY_TICK" }
+  | { type: "SUBMIT_REQUEST"; payload: { request: WorkloadOp } }
   | { type: "PAUSE" }
   | { type: "RESET" }
   | {

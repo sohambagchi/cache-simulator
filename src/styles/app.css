@@ -57,6 +57,19 @@ h1 {
   align-items: center;
 }
 
+.global-control-bar__request {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: end;
+  margin-top: 0.5rem;
+}
+
+.global-control-bar__request label {
+  display: grid;
+  gap: 0.2rem;
+}
+
 .theme-toggle {
   margin-left: auto;
   border: 1px solid var(--border-muted);
@@ -143,6 +156,10 @@ h1 {
 
 .cache-set h4 {
   margin: 0.25rem 0;
+}
+
+.cache-set [data-action="toggle-block-data"] {
+  margin-left: 0.4rem;
 }
 
 .memory-list,

@@ -23,7 +23,14 @@ function cloneState(state: SimState): SimState {
     memory: [...state.memory],
     diagnostics: [...state.diagnostics],
     events: [],
-    stats: { ...state.stats },
+    stats: {
+      ...state.stats,
+      perLevel: {
+        L1: { ...state.stats.perLevel.L1 },
+        L2: { ...state.stats.perLevel.L2 },
+        L3: { ...state.stats.perLevel.L3 },
+      },
+    },
   };
 }
 
@@ -142,6 +149,7 @@ function fillReadMissAtLevel(
       dirtyEvictionTarget: victim.dirty ? target : undefined,
     });
     mutable.nextState.stats.evictions += 1;
+    mutable.nextState.stats.perLevel[level.id].evictions += 1;
 
     if (victim.dirty) {
       const evictedAddress = encodeAddress({
@@ -233,6 +241,7 @@ function forwardWrite(
 
     if (hitWay !== undefined) {
       const hitLine = set.ways[hitWay];
+      mutable.nextState.stats.perLevel[level.id].hits += 1;
       appendEvent(mutable, {
         stage: "hit",
         levelId: level.id,
@@ -273,6 +282,7 @@ function forwardWrite(
       index: decoded.index,
       offset: decoded.offset,
     });
+    mutable.nextState.stats.perLevel[level.id].misses += 1;
 
     if (level.config.writeMissPolicy === "WRITE_NO_ALLOCATE") {
       continue;
@@ -303,6 +313,7 @@ function forwardWrite(
         dirtyEvictionTarget: victim.dirty ? target : undefined,
       });
       mutable.nextState.stats.evictions += 1;
+      mutable.nextState.stats.perLevel[level.id].evictions += 1;
 
       if (victim.dirty) {
         const evictedAddress = encodeAddress({
@@ -450,6 +461,7 @@ function applyRead(mutable: MutableStep, address: number): void {
     if (hitWay !== undefined) {
       sourceValue = set.ways[hitWay].data;
       resolvedLevelIndex = levelIndex;
+      mutable.nextState.stats.perLevel[level.id].hits += 1;
       appendEvent(mutable, {
         stage: "hit",
         levelId: level.id,
@@ -473,6 +485,7 @@ function applyRead(mutable: MutableStep, address: number): void {
       index: decoded.index,
       offset: decoded.offset,
     });
+    mutable.nextState.stats.perLevel[level.id].misses += 1;
 
     if (levelIndex === 0) {
       mutable.nextState.stats.misses += 1;

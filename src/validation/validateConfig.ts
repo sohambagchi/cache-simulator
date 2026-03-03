@@ -107,6 +107,11 @@ export function validateConfig(levels: CacheLevelConfig[]): ValidationResult {
     .filter((level) => level.enabled)
     .sort((left, right) => LEVEL_ORDER[left.id] - LEVEL_ORDER[right.id]);
 
+  if (enabledLevels.length === 0) {
+    errors.push(createIssue("L1", "ACTIVE_LEVELS_MIN", "At least one cache level must be enabled"));
+    return { errors, warnings };
+  }
+
   let previousEnabledLevel: CacheLevelConfig | null = null;
 
   for (const level of enabledLevels) {

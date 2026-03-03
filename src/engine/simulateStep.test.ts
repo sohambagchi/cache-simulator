@@ -197,4 +197,28 @@ describe("simulateStep", () => {
       }),
     );
   });
+
+  it("tracks per-level hit, miss, and eviction totals deterministically", () => {
+    const state0 = createInitialState([
+      createLevel({ id: "L1", totalSizeBytes: 1, blockSizeBytes: 1, associativity: 1 }),
+      createLevel({ id: "L2", totalSizeBytes: 1, blockSizeBytes: 1, associativity: 1 }),
+    ]);
+    state0.memory[0] = 10;
+    state0.memory[1] = 11;
+
+    const read0 = simulateStep(state0, { kind: "R", address: 0 });
+    const read0Again = simulateStep(read0.state, { kind: "R", address: 0 });
+    const read1 = simulateStep(read0Again.state, { kind: "R", address: 1 });
+
+    expect(read1.state.stats.perLevel.L1).toEqual({
+      hits: 1,
+      misses: 2,
+      evictions: 1,
+    });
+    expect(read1.state.stats.perLevel.L2).toEqual({
+      hits: 0,
+      misses: 2,
+      evictions: 1,
+    });
+  });
 });

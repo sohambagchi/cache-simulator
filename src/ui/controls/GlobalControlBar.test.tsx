@@ -43,6 +43,29 @@ describe("GlobalControlBar", () => {
     expect(onDispatch).toHaveBeenNthCalledWith(4, { type: "RESET" });
     expect(onToggleTheme).toHaveBeenCalledTimes(1);
 
+    const kindSelect = host.querySelector('select[aria-label="Request kind"]') as HTMLSelectElement;
+    const addressInput = host.querySelector('input[aria-label="Request address"]') as HTMLInputElement;
+    const valueInput = host.querySelector('input[aria-label="Request value"]') as HTMLInputElement;
+    const submitButton = host.querySelector('button[data-action="submit-request"]');
+
+    act(() => {
+      kindSelect.value = "W";
+      kindSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      addressInput.value = "12";
+      addressInput.dispatchEvent(new Event("change", { bubbles: true }));
+      valueInput.value = "99";
+      valueInput.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    act(() => {
+      submitButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(onDispatch).toHaveBeenNthCalledWith(5, {
+      type: "SUBMIT_REQUEST",
+      payload: { request: { kind: "W", address: 12, value: 99 } },
+    });
+
     act(() => {
       root.unmount();
     });

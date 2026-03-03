@@ -148,6 +148,48 @@ describe("app reducer", () => {
     expect(updated.configLevels[1]).toBe(previousL2);
   });
 
+  it("keeps at least one level enabled when toggling config", () => {
+    const onlyL1Enabled = reducer(initialAppState, {
+      type: "UPDATE_CONFIG",
+      payload: {
+        levelId: "L2",
+        patch: { enabled: false },
+      },
+    });
+
+    const onlyL1 = reducer(onlyL1Enabled, {
+      type: "UPDATE_CONFIG",
+      payload: {
+        levelId: "L3",
+        patch: { enabled: false },
+      },
+    });
+
+    const attemptedDisableLast = reducer(onlyL1, {
+      type: "UPDATE_CONFIG",
+      payload: {
+        levelId: "L1",
+        patch: { enabled: false },
+      },
+    });
+
+    expect(attemptedDisableLast.configLevels.find((level) => level.id === "L1")?.enabled).toBe(true);
+    expect(attemptedDisableLast.validation.errors).toEqual([]);
+  });
+
+  it("applies direct request actions through simulateStep", () => {
+    const state = reducer(initialAppState, {
+      type: "SUBMIT_REQUEST",
+      payload: {
+        request: { kind: "W", address: 9, value: 22 },
+      },
+    });
+
+    expect(state.simState.clock).toBe(1);
+    expect(state.simState.stats.writes).toBe(1);
+    expect(state.simState.events.some((event) => event.address === 9)).toBe(true);
+  });
+
   it("blocks STEP and PLAY_TICK when parseResult.errors.length > 0", () => {
     const invalid = reducer(initialAppState, {
       type: "LOAD_TRACE",
