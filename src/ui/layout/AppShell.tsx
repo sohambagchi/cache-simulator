@@ -15,7 +15,7 @@ type AppShellProps = {
 };
 
 export function AppShell({
-  heading = "Multi-Level Cache Simulator",
+  heading = "Caches",
   theme,
   onToggleTheme,
   hierarchyPanel,
