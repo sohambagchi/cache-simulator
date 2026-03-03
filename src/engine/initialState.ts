@@ -1,8 +1,15 @@
 import { V1_LIMITS } from "../domain/constants";
 import { deriveGeometry, type CacheGeometry } from "../domain/geometry";
-import type { CacheLevelConfig, CacheLevelId } from "../domain/types";
+import type {
+  CacheLevelConfig,
+  CacheLevelId,
+  InclusionPolicy
+} from "../domain/types";
 
-export type PerLevelStats = Record<CacheLevelId, { hits: number; misses: number; evictions: number }>;
+export type PerLevelStats = Record<
+  CacheLevelId,
+  { hits: number; misses: number; evictions: number }
+>;
 
 export type ComparedWay = {
   way: number;
@@ -71,7 +78,7 @@ function createPerLevelStats(): PerLevelStats {
   return {
     L1: { hits: 0, misses: 0, evictions: 0 },
     L2: { hits: 0, misses: 0, evictions: 0 },
-    L3: { hits: 0, misses: 0, evictions: 0 },
+    L3: { hits: 0, misses: 0, evictions: 0 }
   };
 }
 
@@ -82,6 +89,7 @@ export type SimState = {
   diagnostics: string[];
   events: SimEvent[];
   stats: SimStats;
+  inclusionPolicy: InclusionPolicy;
 };
 
 export type SimStepResult = {
@@ -97,7 +105,7 @@ function createEmptyLine(blockSizeBytes: number): CacheLineState {
     dataBytes: Array.from({ length: blockSizeBytes }, () => 0),
     dirty: false,
     lastUsedAt: 0,
-    insertedAt: 0,
+    insertedAt: 0
   };
 }
 
@@ -111,17 +119,22 @@ function createStats(): SimStats {
     writeBacks: 0,
     memoryReads: 0,
     memoryWrites: 0,
-    perLevel: createPerLevelStats(),
+    perLevel: createPerLevelStats()
   };
 }
 
-export function createInitialState(levelConfigs: CacheLevelConfig[]): SimState {
-  const enabledLevels = levelConfigs.filter((levelConfig) => levelConfig.enabled);
+export function createInitialState(
+  levelConfigs: CacheLevelConfig[],
+  inclusionPolicy: InclusionPolicy = "INCLUSIVE"
+): SimState {
+  const enabledLevels = levelConfigs.filter(
+    (levelConfig) => levelConfig.enabled
+  );
   const levels = enabledLevels.map((levelConfig) => {
     const geometry = deriveGeometry(
       levelConfig.totalSizeBytes,
       levelConfig.blockSizeBytes,
-      levelConfig.associativity,
+      levelConfig.associativity
     );
 
     return {
@@ -129,8 +142,10 @@ export function createInitialState(levelConfigs: CacheLevelConfig[]): SimState {
       config: levelConfig,
       geometry,
       sets: Array.from({ length: geometry.numSets }, () => ({
-        ways: Array.from({ length: levelConfig.associativity }, () => createEmptyLine(levelConfig.blockSizeBytes)),
-      })),
+        ways: Array.from({ length: levelConfig.associativity }, () =>
+          createEmptyLine(levelConfig.blockSizeBytes)
+        )
+      }))
     };
   });
 
@@ -141,5 +156,6 @@ export function createInitialState(levelConfigs: CacheLevelConfig[]): SimState {
     diagnostics: [],
     events: [],
     stats: createStats(),
+    inclusionPolicy
   };
 }

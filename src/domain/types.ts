@@ -29,3 +29,5 @@ export type ValidationIssue = {
   levelId: CacheLevelId;
   message: string;
 };
+
+export type InclusionPolicy = "INCLUSIVE" | "EXCLUSIVE";
