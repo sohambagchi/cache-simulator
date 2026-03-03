@@ -3,7 +3,11 @@ import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 import type { CacheLevelConfig, ValidationIssue } from "../../domain/types";
 import { HierarchyBuilderPanel } from "./HierarchyBuilderPanel";
-import { GEOMETRY_SIZE_OPTIONS, toSliderIndex } from "./sliderDomain";
+import {
+  TOTAL_SIZE_OPTIONS,
+  BLOCK_SIZE_OPTIONS,
+  toSliderIndex
+} from "./sliderDomain";
 
 function createLevels(): CacheLevelConfig[] {
   return [
@@ -48,6 +52,9 @@ function Harness({
   errors?: ValidationIssue[];
 }) {
   const [levels, setLevels] = useState(createLevels);
+  const [inclusionPolicy, setInclusionPolicy] = useState<
+    "INCLUSIVE" | "EXCLUSIVE"
+  >("INCLUSIVE");
   const l2MissValue = useMemo(
     () => levels.find((level) => level.id === "L2")?.writeMissPolicy ?? "",
     [levels]
@@ -59,6 +66,8 @@ function Harness({
         levels={levels}
         warnings={warnings}
         errors={errors}
+        inclusionPolicy={inclusionPolicy}
+        onUpdateInclusionPolicy={setInclusionPolicy}
         onUpdateLevel={(levelId, patch) => {
           setLevels((current) =>
             current.map((level) =>
@@ -90,6 +99,8 @@ describe("HierarchyBuilderPanel", () => {
         <HierarchyBuilderPanel
           levels={createLevels()}
           warnings={[]}
+          inclusionPolicy="INCLUSIVE"
+          onUpdateInclusionPolicy={() => undefined}
           onUpdateLevel={() => undefined}
         />
       );
@@ -136,6 +147,8 @@ describe("HierarchyBuilderPanel", () => {
         <HierarchyBuilderPanel
           levels={createLevels()}
           warnings={[]}
+          inclusionPolicy="INCLUSIVE"
+          onUpdateInclusionPolicy={() => undefined}
           onUpdateLevel={onUpdateLevel}
         />
       );
@@ -144,15 +157,15 @@ describe("HierarchyBuilderPanel", () => {
     const totalSlider = host.querySelector(
       'input[aria-label="L1 total size bytes"]'
     ) as HTMLInputElement;
-    // Move to index 7 which is 4096
-    const targetIndex = 7;
+    // Move to index 3 which is 32
+    const targetIndex = 3;
     act(() => {
       setNativeInputValue(totalSlider, String(targetIndex));
       totalSlider.dispatchEvent(new Event("input", { bubbles: true }));
     });
 
     expect(onUpdateLevel).toHaveBeenCalledWith("L1", {
-      totalSizeBytes: GEOMETRY_SIZE_OPTIONS[targetIndex]
+      totalSizeBytes: TOTAL_SIZE_OPTIONS[targetIndex]
     });
 
     act(() => {
@@ -174,6 +187,8 @@ describe("HierarchyBuilderPanel", () => {
         <HierarchyBuilderPanel
           levels={levels}
           warnings={[]}
+          inclusionPolicy="INCLUSIVE"
+          onUpdateInclusionPolicy={() => undefined}
           onUpdateLevel={() => undefined}
         />
       );
@@ -330,6 +345,8 @@ describe("HierarchyBuilderPanel", () => {
         <HierarchyBuilderPanel
           levels={levels}
           warnings={[]}
+          inclusionPolicy="INCLUSIVE"
+          onUpdateInclusionPolicy={() => undefined}
           onUpdateLevel={onUpdateLevel}
         />
       );
@@ -345,11 +362,11 @@ describe("HierarchyBuilderPanel", () => {
     act(() => {
       setNativeInputValue(
         l2TotalSlider,
-        String(toSliderIndex(1024, GEOMETRY_SIZE_OPTIONS))
+        String(toSliderIndex(16, TOTAL_SIZE_OPTIONS))
       );
       l2TotalSlider.dispatchEvent(new Event("input", { bubbles: true }));
     });
-    expect(onUpdateLevel).toHaveBeenCalledWith("L2", { totalSizeBytes: 1024 });
+    expect(onUpdateLevel).toHaveBeenCalledWith("L2", { totalSizeBytes: 16 });
 
     act(() => {
       root.unmount();

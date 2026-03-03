@@ -1,7 +1,13 @@
 import { useState } from "react";
-import type { CacheLevelConfig, ValidationIssue } from "../../domain/types";
+import type {
+  CacheLevelConfig,
+  InclusionPolicy,
+  ValidationIssue
+} from "../../domain/types";
 import {
   GEOMETRY_SIZE_OPTIONS,
+  TOTAL_SIZE_OPTIONS,
+  BLOCK_SIZE_OPTIONS,
   ASSOCIATIVITY_OPTIONS,
   toSliderIndex,
   fromSliderIndex,
@@ -14,6 +20,8 @@ type HierarchyBuilderPanelProps = {
   levels: CacheLevelConfig[];
   warnings: ValidationIssue[];
   errors?: ValidationIssue[];
+  inclusionPolicy: InclusionPolicy;
+  onUpdateInclusionPolicy: (policy: InclusionPolicy) => void;
   onUpdateLevel: (
     levelId: CacheLevelConfig["id"],
     patch: Partial<Omit<CacheLevelConfig, "id">>
@@ -55,6 +63,8 @@ export function HierarchyBuilderPanel({
   levels,
   warnings,
   errors = [],
+  inclusionPolicy,
+  onUpdateInclusionPolicy,
   onUpdateLevel
 }: HierarchyBuilderPanelProps) {
   const enabledCount = levels.filter((level) => level.enabled).length;
@@ -76,6 +86,29 @@ export function HierarchyBuilderPanel({
 
   return (
     <div className="panel-stack">
+      <div
+        className="inclusion-policy-toggle"
+        role="group"
+        aria-label="Inclusion policy"
+      >
+        <button
+          type="button"
+          className={`btn btn--ghost${inclusionPolicy === "INCLUSIVE" ? " btn--active" : ""}`}
+          aria-pressed={inclusionPolicy === "INCLUSIVE"}
+          onClick={() => onUpdateInclusionPolicy("INCLUSIVE")}
+        >
+          Inclusive
+        </button>
+        <button
+          type="button"
+          className={`btn btn--ghost${inclusionPolicy === "EXCLUSIVE" ? " btn--active" : ""}`}
+          aria-pressed={inclusionPolicy === "EXCLUSIVE"}
+          onClick={() => onUpdateInclusionPolicy("EXCLUSIVE")}
+        >
+          Exclusive
+        </button>
+      </div>
+
       {warnings.length > 0 ? (
         <ul className="warning-list" aria-label="Policy warnings">
           {warnings.map((warning, index) => (
@@ -116,11 +149,11 @@ export function HierarchyBuilderPanel({
 
         const totalSizeIndex = toSliderIndex(
           level.totalSizeBytes,
-          GEOMETRY_SIZE_OPTIONS
+          TOTAL_SIZE_OPTIONS
         );
         const blockSizeIndex = toSliderIndex(
           level.blockSizeBytes,
-          GEOMETRY_SIZE_OPTIONS
+          BLOCK_SIZE_OPTIONS
         );
         const associativityIndex = toSliderIndex(
           level.associativity,
@@ -150,7 +183,7 @@ export function HierarchyBuilderPanel({
         let blockSizeInvalidEndPct = 0;
         if (blockSizeBounds.minInclusive !== null) {
           const boundaryIndex =
-            GEOMETRY_SIZE_OPTIONS.findIndex(
+            BLOCK_SIZE_OPTIONS.findIndex(
               (v) => v >= blockSizeBounds.minInclusive!
             ) - 1;
           if (boundaryIndex >= 0 && blockSizeIndex < boundaryIndex) {
@@ -158,7 +191,7 @@ export function HierarchyBuilderPanel({
           }
           if (boundaryIndex >= 0) {
             blockSizeInvalidEndPct =
-              (boundaryIndex / (GEOMETRY_SIZE_OPTIONS.length - 1)) * 100;
+              (boundaryIndex / (BLOCK_SIZE_OPTIONS.length - 1)) * 100;
           }
         }
 
@@ -170,7 +203,7 @@ export function HierarchyBuilderPanel({
               {level.enabled ? (
                 <button
                   type="button"
-                  className="cache-level-header__toggle"
+                  className="btn btn--ghost cache-level-header__toggle"
                   aria-expanded={isExpanded}
                   aria-label={`${isExpanded ? "Collapse" : "Expand"} ${level.id}`}
                   onClick={() =>
@@ -221,7 +254,7 @@ export function HierarchyBuilderPanel({
                       aria-invalid={totalSizeErrors.length > 0}
                       type="range"
                       min={0}
-                      max={GEOMETRY_SIZE_OPTIONS.length - 1}
+                      max={TOTAL_SIZE_OPTIONS.length - 1}
                       value={totalSizeIndex}
                       data-soft-invalid={
                         totalSizeSoftInvalid ? "true" : "false"
@@ -235,7 +268,7 @@ export function HierarchyBuilderPanel({
                         onUpdateLevel(level.id, {
                           totalSizeBytes: fromSliderIndex(
                             Number(event.currentTarget.value),
-                            GEOMETRY_SIZE_OPTIONS
+                            TOTAL_SIZE_OPTIONS
                           )
                         })
                       }
@@ -258,7 +291,7 @@ export function HierarchyBuilderPanel({
                       aria-invalid={blockSizeErrors.length > 0}
                       type="range"
                       min={0}
-                      max={GEOMETRY_SIZE_OPTIONS.length - 1}
+                      max={BLOCK_SIZE_OPTIONS.length - 1}
                       value={blockSizeIndex}
                       data-soft-invalid={
                         blockSizeSoftInvalid ? "true" : "false"
@@ -272,7 +305,7 @@ export function HierarchyBuilderPanel({
                         onUpdateLevel(level.id, {
                           blockSizeBytes: fromSliderIndex(
                             Number(event.currentTarget.value),
-                            GEOMETRY_SIZE_OPTIONS
+                            BLOCK_SIZE_OPTIONS
                           )
                         })
                       }

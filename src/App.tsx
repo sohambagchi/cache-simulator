@@ -71,6 +71,10 @@ function AppContent() {
           levels={state.configLevels}
           warnings={state.validation.warnings}
           errors={state.validation.errors}
+          inclusionPolicy={state.inclusionPolicy}
+          onUpdateInclusionPolicy={(policy) =>
+            dispatch({ type: "UPDATE_INCLUSION_POLICY", payload: { policy } })
+          }
           onUpdateLevel={(levelId, patch) =>
             dispatch({ type: "UPDATE_CONFIG", payload: { levelId, patch } })
           }
