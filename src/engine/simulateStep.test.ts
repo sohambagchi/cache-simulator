@@ -43,7 +43,7 @@ describe("simulateStep", () => {
     const read1 = simulateStep(read0.state, { kind: "R", address: 1 });
     const read0Again = simulateStep(read1.state, { kind: "R", address: 0 });
 
-    expect(read1.state.levels[0].sets[0].ways[0]).toMatchObject({ valid: true, tag: 1, data: 22 });
+    expect(read1.state.levels[0].sets[0].ways[0]).toMatchObject({ valid: true, tag: 1, dataBytes: [22] });
     expect(read0Again.events.some((event) => event.stage === "miss" && event.levelId === "L1")).toBe(true);
   });
 
@@ -91,9 +91,9 @@ describe("simulateStep", () => {
 
     expect(lineL1.valid).toBe(true);
     expect(lineL1.dirty).toBe(true);
-    expect(lineL1.data).toBe(20);
+    expect(lineL1.dataBytes[0]).toBe(20);
     expect(lineL2.valid).toBe(true);
-    expect(lineL2.data).toBe(10);
+    expect(lineL2.dataBytes[0]).toBe(10);
 
     const evictionIndex = result.events.findIndex(
       (event) => event.stage === "eviction" && event.levelId === "L1",
@@ -133,7 +133,7 @@ describe("simulateStep", () => {
 
     expect(stages).toEqual(expect.arrayContaining(["miss", "fill", "memory"]));
     expect(stages.indexOf("fill")).toBeLessThan(stages.lastIndexOf("memory"));
-    expect(result.state.levels[0].sets[0].ways[0]).toMatchObject({ valid: true, data: 12, dirty: false });
+    expect(result.state.levels[0].sets[0].ways[0]).toMatchObject({ valid: true, dataBytes: [12], dirty: false });
   });
 
   it("handles write-miss write-allocate plus write-back as fill then dirty local line", () => {
@@ -144,7 +144,7 @@ describe("simulateStep", () => {
     const result = simulateStep(state0, { kind: "W", address: 0, value: 12 });
 
     expect(result.events.some((event) => event.stage === "memory" && event.opKind === "W")).toBe(false);
-    expect(result.state.levels[0].sets[0].ways[0]).toMatchObject({ valid: true, data: 12, dirty: true });
+    expect(result.state.levels[0].sets[0].ways[0]).toMatchObject({ valid: true, dataBytes: [12], dirty: true });
   });
 
   it("handles write-miss write-no-allocate by bypassing local fill and forwarding downstream", () => {
@@ -221,5 +221,38 @@ describe("simulateStep", () => {
       misses: 2,
       evictions: 1,
     });
+  });
+
+  it("loads an entire block payload and serves reads by offset", () => {
+    const state0 = createInitialState([
+      createLevel({ id: "L1", totalSizeBytes: 8, blockSizeBytes: 4, associativity: 1 }),
+    ]);
+    state0.memory[4] = 10;
+    state0.memory[5] = 20;
+    state0.memory[6] = 30;
+    state0.memory[7] = 40;
+
+    const firstRead = simulateStep(state0, { kind: "R", address: 5 });
+    const secondRead = simulateStep(firstRead.state, { kind: "R", address: 6 });
+
+    expect(firstRead.state.levels[0].sets[1].ways[0].dataBytes).toEqual([10, 20, 30, 40]);
+    expect(secondRead.events.some((event) => event.stage === "memory")).toBe(false);
+    expect(secondRead.state.levels[0].sets[1].ways[0].dataBytes[2]).toBe(30);
+  });
+
+  it("updates only the targeted offset on write hit within a block", () => {
+    const state0 = createInitialState([
+      createLevel({ id: "L1", totalSizeBytes: 8, blockSizeBytes: 4, associativity: 1, writeHitPolicy: "WRITE_BACK" }),
+    ]);
+    state0.memory[4] = 1;
+    state0.memory[5] = 2;
+    state0.memory[6] = 3;
+    state0.memory[7] = 4;
+
+    const afterRead = simulateStep(state0, { kind: "R", address: 5 }).state;
+    const afterWrite = simulateStep(afterRead, { kind: "W", address: 6, value: 99 }).state;
+
+    expect(afterWrite.levels[0].sets[1].ways[0].dataBytes).toEqual([1, 2, 99, 4]);
+    expect(afterWrite.levels[0].sets[1].ways[0].dirty).toBe(true);
   });
 });

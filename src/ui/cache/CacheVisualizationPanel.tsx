@@ -103,7 +103,7 @@ export function CacheVisualizationPanel({ levels, events }: CacheVisualizationPa
                               </td>
                               <td className="cache-cell cache-cell--tag">{way.tag}</td>
                               <td className="cache-cell cache-cell--data">
-                                <span>{showData ? String(way.data) : "hidden"}</span>
+                                <span>{showData ? way.dataBytes.join(",") : "hidden"}</span>
                                 <button
                                   data-action="toggle-block-data"
                                   type="button"

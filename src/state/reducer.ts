@@ -121,6 +121,54 @@ function getEnabledLevelCount(configLevels: CacheLevelConfig[]): number {
   return configLevels.filter((level) => level.enabled).length;
 }
 
+function constrainEnabledHierarchy(configLevels: CacheLevelConfig[]): CacheLevelConfig[] {
+  const constrained = [...configLevels];
+  let previousEnabledLevel: CacheLevelConfig | null = null;
+
+  for (let levelIndex = 0; levelIndex < constrained.length; levelIndex += 1) {
+    const level = constrained[levelIndex];
+    if (!level.enabled) {
+      continue;
+    }
+
+    if (!previousEnabledLevel) {
+      previousEnabledLevel = level;
+      continue;
+    }
+
+    let nextLevel = level;
+    if (nextLevel.blockSizeBytes < previousEnabledLevel.blockSizeBytes) {
+      nextLevel = {
+        ...nextLevel,
+        blockSizeBytes: previousEnabledLevel.blockSizeBytes,
+      };
+    }
+
+    if (nextLevel.totalSizeBytes <= previousEnabledLevel.totalSizeBytes) {
+      let adjustedTotal = nextLevel.totalSizeBytes;
+      if (!Number.isSafeInteger(adjustedTotal) || adjustedTotal <= 0) {
+        adjustedTotal = previousEnabledLevel.totalSizeBytes + 1;
+      }
+
+      while (adjustedTotal <= previousEnabledLevel.totalSizeBytes) {
+        adjustedTotal *= 2;
+      }
+
+      nextLevel = {
+        ...nextLevel,
+        totalSizeBytes: adjustedTotal,
+      };
+    }
+
+    if (nextLevel !== level) {
+      constrained[levelIndex] = nextLevel;
+    }
+    previousEnabledLevel = nextLevel;
+  }
+
+  return constrained;
+}
+
 function getRunBlockingMessage(state: AppState): string | null {
   if (state.parseResult.errors.length > 0) {
     return PARSE_BLOCKING_MESSAGE;
@@ -209,7 +257,7 @@ export function reducer(state: AppState, action: Action): AppState {
       };
     case "UPDATE_CONFIG": {
       const enabledCount = getEnabledLevelCount(state.configLevels);
-      const configLevels = state.configLevels.map((level) => {
+      const updatedLevels = state.configLevels.map((level) => {
         if (level.id !== action.payload.levelId) {
           return level;
         }
@@ -224,6 +272,7 @@ export function reducer(state: AppState, action: Action): AppState {
           id: level.id,
         };
       });
+      const configLevels = constrainEnabledHierarchy(updatedLevels);
 
       return {
         ...state,

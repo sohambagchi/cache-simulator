@@ -38,7 +38,7 @@ export type SimEvent = {
 export type CacheLineState = {
   valid: boolean;
   tag: number;
-  data: number;
+  dataBytes: number[];
   dirty: boolean;
   lastUsedAt: number;
   insertedAt: number;
@@ -90,11 +90,11 @@ export type SimStepResult = {
   diagnostic?: string;
 };
 
-function createEmptyLine(): CacheLineState {
+function createEmptyLine(blockSizeBytes: number): CacheLineState {
   return {
     valid: false,
     tag: 0,
-    data: 0,
+    dataBytes: Array.from({ length: blockSizeBytes }, () => 0),
     dirty: false,
     lastUsedAt: 0,
     insertedAt: 0,
@@ -129,7 +129,7 @@ export function createInitialState(levelConfigs: CacheLevelConfig[]): SimState {
       config: levelConfig,
       geometry,
       sets: Array.from({ length: geometry.numSets }, () => ({
-        ways: Array.from({ length: levelConfig.associativity }, () => createEmptyLine()),
+        ways: Array.from({ length: levelConfig.associativity }, () => createEmptyLine(levelConfig.blockSizeBytes)),
       })),
     };
   });

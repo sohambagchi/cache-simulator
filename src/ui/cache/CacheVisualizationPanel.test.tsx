@@ -28,7 +28,7 @@ function createLevel(levelId: "L1" | "L2", setCount: number): CacheLevelState {
           valid: true,
           dirty: false,
           tag: setIndex,
-          data: 100 + setIndex,
+          dataBytes: [100 + setIndex],
           lastUsedAt: 0,
           insertedAt: 0,
         },

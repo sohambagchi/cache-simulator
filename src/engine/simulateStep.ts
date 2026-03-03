@@ -11,15 +11,20 @@ type MutableStep = {
   tick: number;
 };
 
+type BlockTransfer = {
+  baseAddress: number;
+  dataBytes: number[];
+};
+
 function cloneState(state: SimState): SimState {
   return {
     ...state,
     levels: state.levels.map((level) => ({
-      ...level,
-      sets: level.sets.map((set) => ({
-        ways: set.ways.map((way) => ({ ...way })),
+        ...level,
+        sets: level.sets.map((set) => ({
+          ways: set.ways.map((way) => ({ ...way, dataBytes: [...way.dataBytes] })),
+        })),
       })),
-    })),
     memory: [...state.memory],
     diagnostics: [...state.diagnostics],
     events: [],
@@ -66,6 +71,110 @@ function buildComparedWays(ways: CacheLineState[], tag: number): ComparedWay[] {
   }));
 }
 
+function blockBaseAddress(address: number, offset: number): number {
+  return address - offset;
+}
+
+function readBlockFromMemory(memory: number[], baseAddress: number, blockSizeBytes: number): number[] {
+  return Array.from({ length: blockSizeBytes }, (_, offset) => memory[baseAddress + offset] ?? 0);
+}
+
+function mergeBlockTransfer(
+  targetBytes: number[],
+  targetBaseAddress: number,
+  transfer: BlockTransfer | undefined,
+): number[] {
+  if (!transfer) {
+    return [...targetBytes];
+  }
+
+  const merged = [...targetBytes];
+  for (let offset = 0; offset < merged.length; offset += 1) {
+    const absoluteAddress = targetBaseAddress + offset;
+    const transferOffset = absoluteAddress - transfer.baseAddress;
+    if (transferOffset >= 0 && transferOffset < transfer.dataBytes.length) {
+      merged[offset] = transfer.dataBytes[transferOffset];
+    }
+  }
+
+  return merged;
+}
+
+function withOffsetWrite(
+  dataBytes: number[],
+  offset: number,
+  writeValue: number | undefined,
+): number[] {
+  if (writeValue === undefined) {
+    return dataBytes;
+  }
+
+  const nextBytes = [...dataBytes];
+  nextBytes[offset] = writeValue;
+  return nextBytes;
+}
+
+function readBlockFromLevelLine(
+  line: CacheLineState,
+  sourceBaseAddress: number,
+  targetBaseAddress: number,
+  targetBlockSizeBytes: number,
+  memory: number[],
+): number[] {
+  const fallback = readBlockFromMemory(memory, targetBaseAddress, targetBlockSizeBytes);
+
+  for (let offset = 0; offset < targetBlockSizeBytes; offset += 1) {
+    const absoluteAddress = targetBaseAddress + offset;
+    const sourceOffset = absoluteAddress - sourceBaseAddress;
+    if (sourceOffset >= 0 && sourceOffset < line.dataBytes.length) {
+      fallback[offset] = line.dataBytes[sourceOffset];
+    }
+  }
+
+  return fallback;
+}
+
+function readBlockFromHierarchy(
+  state: SimState,
+  startLevelIndex: number,
+  address: number,
+  targetBlockSizeBytes: number,
+): BlockTransfer {
+  const targetBaseAddress = blockBaseAddress(address, address % targetBlockSizeBytes);
+
+  for (let levelIndex = startLevelIndex; levelIndex < state.levels.length; levelIndex += 1) {
+    const level = state.levels[levelIndex];
+    const decoded = decodeAddress({
+      address,
+      offsetBits: level.geometry.offsetBits,
+      indexBits: level.geometry.indexBits,
+    });
+    const set = level.sets[decoded.index];
+    const hitLine = set.ways.find((way) => way.valid && way.tag === decoded.tag);
+    if (!hitLine) {
+      continue;
+    }
+
+    const sourceBaseAddress = blockBaseAddress(address, decoded.offset);
+
+    return {
+      baseAddress: targetBaseAddress,
+      dataBytes: readBlockFromLevelLine(
+        hitLine,
+        sourceBaseAddress,
+        targetBaseAddress,
+        targetBlockSizeBytes,
+        state.memory,
+      ),
+    };
+  }
+
+  return {
+    baseAddress: targetBaseAddress,
+    dataBytes: readBlockFromMemory(state.memory, targetBaseAddress, targetBlockSizeBytes),
+  };
+}
+
 function writeMemory(
   mutable: MutableStep,
   opKind: "R" | "W",
@@ -95,7 +204,7 @@ function setLine(
   line: CacheLineState,
   values: {
     tag: number;
-    value: number;
+    dataBytes: number[];
     dirty: boolean;
     tick: number;
     setInsertedAt: boolean;
@@ -103,7 +212,7 @@ function setLine(
 ): void {
   line.valid = true;
   line.tag = values.tag;
-  line.data = values.value;
+  line.dataBytes = [...values.dataBytes];
   line.dirty = values.dirty;
   line.lastUsedAt = values.tick;
 
@@ -116,7 +225,7 @@ function fillReadMissAtLevel(
   mutable: MutableStep,
   levelIndex: number,
   address: number,
-  value: number,
+  blockTransfer: BlockTransfer,
 ): void {
   const level = mutable.nextState.levels[levelIndex];
   const decoded = decodeAddress({
@@ -178,7 +287,10 @@ function fillReadMissAtLevel(
         dirtyEvictionTarget: target,
       });
       mutable.nextState.stats.writeBacks += 1;
-      forwardWrite(mutable, levelIndex + 1, evictedAddress, victim.data, "W");
+      forwardWrite(mutable, levelIndex + 1, evictedAddress, undefined, {
+        baseAddress: evictedAddress,
+        dataBytes: victim.dataBytes,
+      });
     }
   }
 
@@ -195,7 +307,7 @@ function fillReadMissAtLevel(
 
   setLine(set.ways[victimWay], {
     tag: decoded.tag,
-    value,
+    dataBytes: blockTransfer.dataBytes,
     dirty: false,
     tick: mutable.tick,
     setInsertedAt: true,
@@ -206,8 +318,8 @@ function forwardWrite(
   mutable: MutableStep,
   startLevelIndex: number,
   address: number,
-  value: number,
-  opKind: "W",
+  value: number | undefined,
+  incomingBlock?: BlockTransfer,
 ): void {
   for (let levelIndex = startLevelIndex; levelIndex < mutable.nextState.levels.length; levelIndex += 1) {
     const level = mutable.nextState.levels[levelIndex];
@@ -223,7 +335,7 @@ function forwardWrite(
     appendEvent(mutable, {
       stage: "decode",
       levelId: level.id,
-      opKind,
+      opKind: "W",
       address,
       tag: decoded.tag,
       index: decoded.index,
@@ -232,7 +344,7 @@ function forwardWrite(
     appendEvent(mutable, {
       stage: "compare",
       levelId: level.id,
-      opKind,
+      opKind: "W",
       address,
       tag: decoded.tag,
       index: decoded.index,
@@ -246,17 +358,21 @@ function forwardWrite(
       appendEvent(mutable, {
         stage: "hit",
         levelId: level.id,
-        opKind,
+        opKind: "W",
         address,
         tag: decoded.tag,
         index: decoded.index,
         offset: decoded.offset,
       });
 
+      const levelBaseAddress = blockBaseAddress(address, decoded.offset);
+      const mergedFromTransfer = mergeBlockTransfer(hitLine.dataBytes, levelBaseAddress, incomingBlock);
+      const mergedDataBytes = withOffsetWrite(mergedFromTransfer, decoded.offset, value);
+
       if (level.config.writeHitPolicy === "WRITE_BACK") {
         setLine(hitLine, {
           tag: decoded.tag,
-          value,
+          dataBytes: mergedDataBytes,
           dirty: true,
           tick: mutable.tick,
           setInsertedAt: false,
@@ -266,7 +382,7 @@ function forwardWrite(
 
       setLine(hitLine, {
         tag: decoded.tag,
-        value,
+        dataBytes: mergedDataBytes,
         dirty: false,
         tick: mutable.tick,
         setInsertedAt: false,
@@ -275,12 +391,12 @@ function forwardWrite(
     }
 
     appendEvent(mutable, {
-      stage: "miss",
-      levelId: level.id,
-      opKind,
-      address,
-      tag: decoded.tag,
-      index: decoded.index,
+        stage: "miss",
+        levelId: level.id,
+        opKind: "W",
+        address,
+        tag: decoded.tag,
+        index: decoded.index,
       offset: decoded.offset,
     });
     mutable.nextState.stats.perLevel[level.id].misses += 1;
@@ -305,7 +421,7 @@ function forwardWrite(
       appendEvent(mutable, {
         stage: "eviction",
         levelId: level.id,
-        opKind,
+        opKind: "W",
         address,
         tag: decoded.tag,
         index: decoded.index,
@@ -333,7 +449,7 @@ function forwardWrite(
         appendEvent(mutable, {
           stage: "writeback",
           levelId: level.id,
-          opKind,
+          opKind: "W",
           address: evictedAddress,
           tag: evictedDecoded.tag,
           index: evictedDecoded.index,
@@ -342,14 +458,17 @@ function forwardWrite(
           dirtyEvictionTarget: target,
         });
         mutable.nextState.stats.writeBacks += 1;
-        forwardWrite(mutable, levelIndex + 1, evictedAddress, victim.data, "W");
+        forwardWrite(mutable, levelIndex + 1, evictedAddress, undefined, {
+          baseAddress: evictedAddress,
+          dataBytes: victim.dataBytes,
+        });
       }
     }
 
     appendEvent(mutable, {
       stage: "fill",
       levelId: level.id,
-      opKind,
+      opKind: "W",
       address,
       tag: decoded.tag,
       index: decoded.index,
@@ -358,10 +477,20 @@ function forwardWrite(
     });
 
     const insertedLine = set.ways[victimWay];
+    const levelBaseAddress = blockBaseAddress(address, decoded.offset);
+    const fetched = readBlockFromHierarchy(
+      mutable.nextState,
+      levelIndex + 1,
+      address,
+      level.config.blockSizeBytes,
+    );
+    const mergedFromTransfer = mergeBlockTransfer(fetched.dataBytes, levelBaseAddress, incomingBlock);
+    const mergedDataBytes = withOffsetWrite(mergedFromTransfer, decoded.offset, value);
+
     if (level.config.writeHitPolicy === "WRITE_BACK") {
       setLine(insertedLine, {
         tag: decoded.tag,
-        value,
+        dataBytes: mergedDataBytes,
         dirty: true,
         tick: mutable.tick,
         setInsertedAt: true,
@@ -371,7 +500,7 @@ function forwardWrite(
 
     setLine(insertedLine, {
       tag: decoded.tag,
-      value,
+      dataBytes: mergedDataBytes,
       dirty: false,
       tick: mutable.tick,
       setInsertedAt: true,
@@ -389,7 +518,15 @@ function forwardWrite(
       })
     : { tag: 0, index: 0, offset: 0 };
 
-  writeMemory(mutable, "W", address, value, terminalDecode);
+  if (incomingBlock) {
+    for (let offset = 0; offset < incomingBlock.dataBytes.length; offset += 1) {
+      mutable.nextState.memory[incomingBlock.baseAddress + offset] = incomingBlock.dataBytes[offset];
+    }
+    writeMemory(mutable, "W", incomingBlock.baseAddress, incomingBlock.dataBytes[0] ?? 0, terminalDecode);
+    return;
+  }
+
+  writeMemory(mutable, "W", address, value ?? 0, terminalDecode);
 }
 
 function applyWrite(mutable: MutableStep, address: number, value: number): void {
@@ -411,7 +548,7 @@ function applyWrite(mutable: MutableStep, address: number, value: number): void 
   mutable.nextState.stats.misses += firstHitWay === undefined ? 1 : 0;
   mutable.nextState.stats.hits += firstHitWay !== undefined ? 1 : 0;
 
-  forwardWrite(mutable, 0, address, value, "W");
+  forwardWrite(mutable, 0, address, value);
 }
 
 function applyRead(mutable: MutableStep, address: number): void {
@@ -460,7 +597,7 @@ function applyRead(mutable: MutableStep, address: number): void {
     });
 
     if (hitWay !== undefined) {
-      sourceValue = set.ways[hitWay].data;
+      sourceValue = set.ways[hitWay].dataBytes[decoded.offset] ?? 0;
       resolvedLevelIndex = levelIndex;
       mutable.nextState.stats.perLevel[level.id].hits += 1;
       appendEvent(mutable, {
@@ -504,7 +641,13 @@ function applyRead(mutable: MutableStep, address: number): void {
   }
 
   for (let levelIndex = resolvedLevelIndex - 1; levelIndex >= 0; levelIndex -= 1) {
-    fillReadMissAtLevel(mutable, levelIndex, address, sourceValue);
+    const blockTransfer = readBlockFromHierarchy(
+      mutable.nextState,
+      levelIndex + 1,
+      address,
+      mutable.nextState.levels[levelIndex].config.blockSizeBytes,
+    );
+    fillReadMissAtLevel(mutable, levelIndex, address, blockTransfer);
   }
 }
 

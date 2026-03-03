@@ -6,7 +6,9 @@ type MemoryPanelProps = {
 };
 
 export function MemoryPanel({ memory, events }: MemoryPanelProps) {
-  const touchedAddresses = Array.from(new Set(events.map((event) => event.address))).sort((a, b) => a - b);
+  const touchedAddresses = Array.from(
+    new Set(events.filter((event) => event.stage === "memory").map((event) => event.address)),
+  ).sort((a, b) => a - b);
 
   return (
     <ul className="memory-list">

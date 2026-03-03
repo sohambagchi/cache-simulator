@@ -334,4 +334,40 @@ describe("app reducer", () => {
     expect(selectCanRunSimulation(configInvalid)).toBe(false);
     expect(selectCanRunSimulation(warningOnly)).toBe(true);
   });
+
+  it("constrains cross-level total size monotonicity during edit updates", () => {
+    const updated = reducer(initialAppState, {
+      type: "UPDATE_CONFIG",
+      payload: {
+        levelId: "L1",
+        patch: { totalSizeBytes: 1024 },
+      },
+    });
+
+    const l1 = updated.configLevels.find((level) => level.id === "L1");
+    const l2 = updated.configLevels.find((level) => level.id === "L2");
+
+    expect(l1).toBeDefined();
+    expect(l2).toBeDefined();
+    expect(l2!.totalSizeBytes).toBeGreaterThan(l1!.totalSizeBytes);
+    expect(updated.validation.errors).toEqual([]);
+  });
+
+  it("constrains cross-level block size monotonicity during edit updates", () => {
+    const updated = reducer(initialAppState, {
+      type: "UPDATE_CONFIG",
+      payload: {
+        levelId: "L2",
+        patch: { blockSizeBytes: 8 },
+      },
+    });
+
+    const l1 = updated.configLevels.find((level) => level.id === "L1");
+    const l2 = updated.configLevels.find((level) => level.id === "L2");
+
+    expect(l1).toBeDefined();
+    expect(l2).toBeDefined();
+    expect(l2!.blockSizeBytes).toBeGreaterThanOrEqual(l1!.blockSizeBytes);
+    expect(updated.validation.errors).toEqual([]);
+  });
 });
