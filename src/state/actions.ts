@@ -1,4 +1,8 @@
-import type { CacheLevelConfig, CacheLevelId } from "../domain/types";
+import type {
+  CacheLevelConfig,
+  CacheLevelId,
+  InclusionPolicy
+} from "../domain/types";
 import type { WorkloadOp } from "../parser/parseWorkload";
 
 export type Action =
@@ -10,6 +14,7 @@ export type Action =
   | { type: "SUBMIT_REQUEST"; payload: { request: WorkloadOp } }
   | { type: "PAUSE" }
   | { type: "RESET" }
+  | { type: "UPDATE_INCLUSION_POLICY"; payload: { policy: InclusionPolicy } }
   | {
       type: "UPDATE_CONFIG";
       payload: {

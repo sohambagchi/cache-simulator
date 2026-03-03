@@ -1,4 +1,4 @@
-import type { CacheLevelConfig } from "../domain/types";
+import type { CacheLevelConfig, InclusionPolicy } from "../domain/types";
 import { createInitialState, type SimState } from "../engine/initialState";
 import { simulateStep } from "../engine/simulateStep";
 import {
@@ -57,14 +57,16 @@ export type AppState = {
   nextOpIndex: number;
   isPlaying: boolean;
   statusMessage: string | null;
+  inclusionPolicy: InclusionPolicy;
 };
 
 function createSimulationState(
   configLevels: CacheLevelConfig[],
+  inclusionPolicy: InclusionPolicy = "INCLUSIVE",
   fallbackState?: SimState
 ): SimState {
   try {
-    return createInitialState(configLevels);
+    return createInitialState(configLevels, inclusionPolicy);
   } catch (error) {
     if (fallbackState) {
       return fallbackState;
@@ -83,7 +85,11 @@ function resetForTrace(
     ...state,
     workloadText,
     parseResult,
-    simState: createSimulationState(state.configLevels, state.simState),
+    simState: createSimulationState(
+      state.configLevels,
+      state.inclusionPolicy,
+      state.simState
+    ),
     nextOpIndex: 0,
     isPlaying: false,
     statusMessage: null
@@ -155,10 +161,11 @@ export const initialAppState: AppState = {
   validation: validateConfig(DEFAULT_CONFIG_LEVELS),
   workloadText: initialWorkloadText,
   parseResult: initialParseResult,
-  simState: createSimulationState(DEFAULT_CONFIG_LEVELS),
+  simState: createSimulationState(DEFAULT_CONFIG_LEVELS, "INCLUSIVE"),
   nextOpIndex: 0,
   isPlaying: false,
-  statusMessage: null
+  statusMessage: null,
+  inclusionPolicy: "INCLUSIVE"
 };
 
 export function reducer(state: AppState, action: Action): AppState {
@@ -216,7 +223,11 @@ export function reducer(state: AppState, action: Action): AppState {
     case "RESET":
       return {
         ...state,
-        simState: createSimulationState(state.configLevels, state.simState),
+        simState: createSimulationState(
+          state.configLevels,
+          state.inclusionPolicy,
+          state.simState
+        ),
         nextOpIndex: 0,
         isPlaying: false,
         statusMessage: null
@@ -247,7 +258,26 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         configLevels,
         validation: validateConfig(configLevels),
-        simState: createSimulationState(configLevels, state.simState),
+        simState: createSimulationState(
+          configLevels,
+          state.inclusionPolicy,
+          state.simState
+        ),
+        nextOpIndex: 0,
+        isPlaying: false,
+        statusMessage: null
+      };
+    }
+    case "UPDATE_INCLUSION_POLICY": {
+      const policy = action.payload.policy;
+      return {
+        ...state,
+        inclusionPolicy: policy,
+        simState: createSimulationState(
+          state.configLevels,
+          policy,
+          state.simState
+        ),
         nextOpIndex: 0,
         isPlaying: false,
         statusMessage: null
