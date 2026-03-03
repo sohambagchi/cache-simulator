@@ -54,7 +54,7 @@ test("app shell loads", async ({ page }) => {
 
 **Step 2: Run test to confirm failure (before scaffold exists)**
 
-Run: `npm run test:e2e -- tests/smoke/app-load.spec.ts`
+Run: `bun run test:e2e -- tests/smoke/app-load.spec.ts`
 Expected: FAIL (missing app files/build setup).
 
 **Step 3: Add minimal scaffold and scripts**
@@ -82,7 +82,7 @@ Expected: FAIL (missing app files/build setup).
 // vercel.json
 {
   "framework": "vite",
-  "buildCommand": "npm run build",
+  "buildCommand": "bun run build",
   "outputDirectory": "dist",
   "routes": [{ "src": "/(.*)", "dest": "/index.html" }]
 }
@@ -97,7 +97,7 @@ export function App() {
 
 **Step 4: Run scaffold verification**
 
-Run: `npm run test && npm run test:e2e -- tests/smoke/app-load.spec.ts`
+Run: `bun run test && bun run test:e2e -- tests/smoke/app-load.spec.ts`
 Expected: PASS; smoke test finds heading.
 
 **Step 5: Commit**
@@ -169,7 +169,7 @@ describe("CacheLevelConfig", () => {
 
 **Step 2: Run test to verify failure**
 
-Run: `npm run test -- src/domain/geometry.test.ts`
+Run: `bun run test -- src/domain/geometry.test.ts`
 Expected: FAIL (`Cannot find module './geometry'`).
 
 **Step 3: Add domain types/constants/geometry**
@@ -220,7 +220,7 @@ export function deriveGeometry(input: { totalSizeBytes: number; blockSizeBytes: 
 
 **Step 4: Run targeted tests**
 
-Run: `npm run test -- src/domain/types.test.ts src/domain/geometry.test.ts src/domain/constants.test.ts`
+Run: `bun run test -- src/domain/types.test.ts src/domain/geometry.test.ts src/domain/constants.test.ts`
 Expected: PASS; geometry, type fixtures, and finite bounds validate.
 
 **Step 5: Commit**
@@ -288,7 +288,7 @@ describe("parseWorkload", () => {
 
 **Step 2: Run parser test to confirm failure**
 
-Run: `npm run test -- src/parser/parseWorkload.test.ts`
+Run: `bun run test -- src/parser/parseWorkload.test.ts`
 Expected: FAIL (parser module missing).
 
 **Step 3: Implement parser and numeric tokenizer**
@@ -323,7 +323,7 @@ Implementation requirements:
 
 **Step 4: Run parser tests**
 
-Run: `npm run test -- src/parser/parseWorkload.test.ts`
+Run: `bun run test -- src/parser/parseWorkload.test.ts`
 Expected: PASS; all parse and error scenarios are stable.
 
 **Step 5: Commit**
@@ -386,7 +386,7 @@ describe("validateConfig", () => {
 
 **Step 2: Run test to verify failure**
 
-Run: `npm run test -- src/validation/validateConfig.test.ts`
+Run: `bun run test -- src/validation/validateConfig.test.ts`
 Expected: FAIL (missing validator).
 
 **Step 3: Implement validator**
@@ -408,7 +408,7 @@ Validation rules:
 
 **Step 4: Run validation tests**
 
-Run: `npm run test -- src/validation/validateConfig.test.ts`
+Run: `bun run test -- src/validation/validateConfig.test.ts`
 Expected: PASS; errors vs warnings separated correctly.
 
 **Step 5: Commit**
@@ -462,7 +462,7 @@ describe("chooseVictimWay", () => {
 
 **Step 2: Run tests to verify failure**
 
-Run: `npm run test -- src/engine/addressing.test.ts src/engine/replacement.test.ts`
+Run: `bun run test -- src/engine/addressing.test.ts src/engine/replacement.test.ts`
 Expected: FAIL (engine modules missing).
 
 **Step 3: Implement pure engine modules**
@@ -524,7 +524,7 @@ it("returns explicit runtime diagnostic when an out-of-range op bypasses parser"
 });
 ```
 
-Run: `npm run test -- src/engine/simulateStep.test.ts`
+Run: `bun run test -- src/engine/simulateStep.test.ts`
 Expected: PASS with deterministic event sequence assertions.
 
 **Step 5: Commit**
@@ -569,7 +569,7 @@ describe("app reducer", () => {
 
 **Step 2: Run tests to verify failure**
 
-Run: `npm run test -- src/state/reducer.test.ts`
+Run: `bun run test -- src/state/reducer.test.ts`
 Expected: FAIL (state modules missing).
 
 **Step 3: Implement reducer/store/selectors**
@@ -627,7 +627,7 @@ Implementation requirements:
 
 **Step 4: Verify reducer behavior**
 
-Run: `npm run test -- src/state/reducer.test.ts`
+Run: `bun run test -- src/state/reducer.test.ts`
 Expected: PASS; all required action paths produce deterministic state.
 
 **Step 5: Commit**
@@ -703,7 +703,7 @@ it("uses desktop-first layout and falls back to functional stacked mobile layout
 
 **Step 2: Run UI tests to verify failure**
 
-Run: `npm run test -- src/ui/layout/AppShell.test.tsx src/ui/controls/GlobalControlBar.test.tsx src/ui/config/HierarchyBuilderPanel.test.tsx src/ui/workload/WorkloadEditorPanel.test.tsx`
+Run: `bun run test -- src/ui/layout/AppShell.test.tsx src/ui/controls/GlobalControlBar.test.tsx src/ui/config/HierarchyBuilderPanel.test.tsx src/ui/workload/WorkloadEditorPanel.test.tsx`
 Expected: FAIL (components missing).
 
 **Step 3: Implement panel components and wire to state**
@@ -736,7 +736,7 @@ UI composition requirements:
 
 **Step 4: Run UI tests and smoke app test**
 
-Run: `npm run test -- src/ui/layout/AppShell.test.tsx src/ui/controls/GlobalControlBar.test.tsx src/ui/config/HierarchyBuilderPanel.test.tsx src/ui/workload/WorkloadEditorPanel.test.tsx && npm run test:e2e -- tests/smoke/app-load.spec.ts`
+Run: `bun run test -- src/ui/layout/AppShell.test.tsx src/ui/controls/GlobalControlBar.test.tsx src/ui/config/HierarchyBuilderPanel.test.tsx src/ui/workload/WorkloadEditorPanel.test.tsx && bun run test:e2e -- tests/smoke/app-load.spec.ts`
 Expected: PASS; core sections render and interactions dispatch actions.
 
 **Step 5: Commit**
@@ -766,7 +766,7 @@ it("defaults to light and toggles dark class", async () => {
 
 **Step 2: Run test to verify failure**
 
-Run: `npm run test -- src/ui/common/ThemeToggle.test.tsx`
+Run: `bun run test -- src/ui/common/ThemeToggle.test.tsx`
 Expected: FAIL (toggle not implemented).
 
 **Step 3: Implement tokenized theme system**
@@ -797,7 +797,7 @@ Implementation notes:
 
 **Step 4: Run theme tests and visual smoke**
 
-Run: `npm run test -- src/ui/common/ThemeToggle.test.tsx && npm run test:e2e -- tests/smoke/app-load.spec.ts`
+Run: `bun run test -- src/ui/common/ThemeToggle.test.tsx && bun run test:e2e -- tests/smoke/app-load.spec.ts`
 Expected: PASS; theme defaults to light and toggles cleanly.
 
 **Step 5: Commit**
@@ -845,7 +845,7 @@ it("keeps simulation runnable for warning-only parse/config state", async () => 
 
 **Step 2: Run integration tests to verify failure**
 
-Run: `npm run test -- tests/integration/simulator-flow.test.tsx tests/integration/validation-blocking.test.tsx`
+Run: `bun run test -- tests/integration/simulator-flow.test.tsx tests/integration/validation-blocking.test.tsx`
 Expected: FAIL until flow wiring is complete.
 
 **Step 3: Add minimal glue fixes to satisfy tests**
@@ -866,7 +866,7 @@ test("user can step, run, pause, and reset", async ({ page }) => {
 });
 ```
 
-Run: `npm run test && npm run test:e2e -- tests/e2e/step-run-reset.spec.ts`
+Run: `bun run test && bun run test:e2e -- tests/e2e/step-run-reset.spec.ts`
 Expected: PASS; full flow green.
 
 **Step 5: Commit**
@@ -897,12 +897,12 @@ git commit -m "test: add integration and e2e coverage for simulator flow"
 
 **Step 2: Run full verification commands**
 
-Run: `npm run lint && npm run test && npm run test:e2e`
+Run: `bun run lint && bun run test && bun run test:e2e`
 Expected: PASS across all suites.
 
 **Step 3: Validate production build output**
 
-Run: `npm run build && npm run preview`
+Run: `bun run build && bun run preview`
 Expected: PASS; `dist/` created and app serves locally.
 
 **Step 4: Document optional deployment follow-up (not part of core completion gate)**
