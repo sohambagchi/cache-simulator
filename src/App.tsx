@@ -30,6 +30,7 @@ function AppContent() {
   const { state, dispatch } = useStore();
   const canRun = selectCanRunSimulation(state);
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
+  const [playbackSpeedMs, setPlaybackSpeedMs] = useState(300);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -47,10 +48,10 @@ function AppContent() {
 
     const timer = window.setInterval(() => {
       dispatch({ type: "PLAY_TICK" });
-    }, 300);
+    }, playbackSpeedMs);
 
     return () => window.clearInterval(timer);
-  }, [dispatch, state.isPlaying, state.nextOpIndex, state.parseResult.ops.length]);
+  }, [dispatch, playbackSpeedMs, state.isPlaying, state.nextOpIndex, state.parseResult.ops.length]);
 
   return (
     <AppShell
@@ -59,8 +60,10 @@ function AppContent() {
           canRun={canRun}
           isPlaying={state.isPlaying}
           statusMessage={state.statusMessage}
+          playbackSpeedMs={playbackSpeedMs}
           theme={theme}
           onToggleTheme={() => setTheme((currentTheme) => getNextTheme(currentTheme))}
+          onPlaybackSpeedChange={setPlaybackSpeedMs}
           onDispatch={dispatch}
         />
       }

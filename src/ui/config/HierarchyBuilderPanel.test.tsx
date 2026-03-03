@@ -1,6 +1,6 @@
 import { act, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { CacheLevelConfig, ValidationIssue } from "../../domain/types";
 import { HierarchyBuilderPanel } from "./HierarchyBuilderPanel";
 
@@ -62,7 +62,60 @@ function Harness({ warnings = [] }: { warnings?: ValidationIssue[] }) {
   );
 }
 
+function setNativeInputValue(input: HTMLInputElement, value: string): void {
+  const descriptor = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value");
+  descriptor?.set?.call(input, value);
+}
+
 describe("HierarchyBuilderPanel", () => {
+  it("keeps geometry interdependent by coercing powers-of-two and deterministic total size", () => {
+    const host = document.createElement("div");
+    const root = createRoot(host);
+    const onUpdateLevel = vi.fn();
+
+    act(() => {
+      root.render(<HierarchyBuilderPanel levels={createLevels()} warnings={[]} onUpdateLevel={onUpdateLevel} />);
+    });
+
+    const total = host.querySelector('input[aria-label="L1 total size bytes"]') as HTMLInputElement;
+    const block = host.querySelector('input[aria-label="L1 block size bytes"]') as HTMLInputElement;
+    const associativity = host.querySelector('input[aria-label="L1 associativity"]') as HTMLInputElement;
+
+    act(() => {
+      setNativeInputValue(block, "24");
+      block.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(onUpdateLevel).toHaveBeenNthCalledWith(1, "L1", {
+      blockSizeBytes: 32,
+      associativity: 2,
+      totalSizeBytes: 256,
+    });
+
+    act(() => {
+      setNativeInputValue(associativity, "3");
+      associativity.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(onUpdateLevel).toHaveBeenNthCalledWith(2, "L1", {
+      blockSizeBytes: 16,
+      associativity: 4,
+      totalSizeBytes: 256,
+    });
+
+    act(() => {
+      setNativeInputValue(total, "300");
+      total.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(onUpdateLevel).toHaveBeenNthCalledWith(3, "L1", {
+      blockSizeBytes: 16,
+      associativity: 2,
+      totalSizeBytes: 256,
+    });
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
   it("disables enabled toggle for the final active level", () => {
     const host = document.createElement("div");
     const root = createRoot(host);

@@ -6,8 +6,10 @@ type GlobalControlBarProps = {
   canRun: boolean;
   isPlaying: boolean;
   statusMessage?: string | null;
+  playbackSpeedMs: number;
   theme: ThemeMode;
   onToggleTheme: () => void;
+  onPlaybackSpeedChange: (speedMs: number) => void;
   onDispatch: (action: Action) => void;
 };
 
@@ -15,8 +17,10 @@ export function GlobalControlBar({
   canRun,
   isPlaying,
   statusMessage,
+  playbackSpeedMs,
   theme,
   onToggleTheme,
+  onPlaybackSpeedChange,
   onDispatch,
 }: GlobalControlBarProps) {
   const [requestKind, setRequestKind] = useState<"R" | "W">("R");
@@ -86,6 +90,19 @@ export function GlobalControlBar({
         <button data-action="reset" type="button" onClick={() => onDispatch({ type: "RESET" })}>
           Reset
         </button>
+        <label className="global-control-bar__speed">
+          <span>Speed</span>
+          <select
+            aria-label="Playback speed"
+            value={String(playbackSpeedMs)}
+            onChange={(event) => onPlaybackSpeedChange(Number(event.currentTarget.value))}
+          >
+            <option value="120">Fast</option>
+            <option value="300">Normal</option>
+            <option value="600">Slow</option>
+            <option value="1000">Step focus</option>
+          </select>
+        </label>
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </div>
       <div className="global-control-bar__request">

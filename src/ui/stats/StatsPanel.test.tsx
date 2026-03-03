@@ -36,6 +36,7 @@ describe("StatsPanel", () => {
     expect(host.textContent).toContain("Progress");
     expect(host.textContent).toContain("2/5");
     expect(host.textContent).toContain("Hits");
+    expect(host.textContent).toContain("Memory Reads");
     expect(host.textContent).toContain("L1 hit rate");
     expect(host.textContent).toContain("66.7%");
     expect(host.textContent).toContain("L2 misses");

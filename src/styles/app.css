@@ -57,6 +57,11 @@ h1 {
   align-items: center;
 }
 
+.global-control-bar__speed {
+  display: inline-grid;
+  gap: 0.2rem;
+}
+
 .global-control-bar__request {
   display: flex;
   gap: 0.5rem;

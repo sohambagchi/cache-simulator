@@ -46,6 +46,10 @@ export function StatsPanel({ stats, levels, nextOpIndex, totalOps }: StatsPanelP
         <dt>Memory Writes</dt>
         <dd>{stats.memoryWrites}</dd>
       </div>
+      <div>
+        <dt>Memory Reads</dt>
+        <dd>{stats.memoryReads}</dd>
+      </div>
       {levels.map((levelId) => {
         const levelStats = stats.perLevel[levelId];
 

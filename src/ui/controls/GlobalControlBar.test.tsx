@@ -7,6 +7,7 @@ describe("GlobalControlBar", () => {
   it("keeps controls visible and dispatches step/run/pause/reset including PLAY for run", async () => {
     const onDispatch = vi.fn();
     const onToggleTheme = vi.fn();
+    const onPlaybackSpeedChange = vi.fn();
     const host = document.createElement("div");
     const root = createRoot(host);
 
@@ -17,6 +18,8 @@ describe("GlobalControlBar", () => {
           isPlaying={false}
           theme="light"
           onToggleTheme={onToggleTheme}
+          playbackSpeedMs={300}
+          onPlaybackSpeedChange={onPlaybackSpeedChange}
           onDispatch={onDispatch}
         />,
       );
@@ -42,6 +45,13 @@ describe("GlobalControlBar", () => {
     expect(onDispatch).toHaveBeenNthCalledWith(3, { type: "PAUSE" });
     expect(onDispatch).toHaveBeenNthCalledWith(4, { type: "RESET" });
     expect(onToggleTheme).toHaveBeenCalledTimes(1);
+
+    const speedSelect = host.querySelector('select[aria-label="Playback speed"]') as HTMLSelectElement;
+    act(() => {
+      speedSelect.value = "120";
+      speedSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(onPlaybackSpeedChange).toHaveBeenCalledWith(120);
 
     const kindSelect = host.querySelector('select[aria-label="Request kind"]') as HTMLSelectElement;
     const addressInput = host.querySelector('input[aria-label="Request address"]') as HTMLInputElement;
@@ -74,6 +84,7 @@ describe("GlobalControlBar", () => {
   it("shows inline feedback and blocks submit when direct request input is invalid", () => {
     const onDispatch = vi.fn();
     const onToggleTheme = vi.fn();
+    const onPlaybackSpeedChange = vi.fn();
     const host = document.createElement("div");
     const root = createRoot(host);
 
@@ -84,6 +95,8 @@ describe("GlobalControlBar", () => {
           isPlaying={false}
           theme="light"
           onToggleTheme={onToggleTheme}
+          playbackSpeedMs={300}
+          onPlaybackSpeedChange={onPlaybackSpeedChange}
           onDispatch={onDispatch}
         />,
       );

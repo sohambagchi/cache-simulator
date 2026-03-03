@@ -6,6 +6,55 @@ type HierarchyBuilderPanelProps = {
   onUpdateLevel: (levelId: CacheLevelConfig["id"], patch: Partial<Omit<CacheLevelConfig, "id">>) => void;
 };
 
+function nearestPowerOfTwo(value: number): number {
+  if (!Number.isFinite(value) || value <= 1) {
+    return 1;
+  }
+
+  let upperBound = 1;
+  while (upperBound < value && upperBound < Number.MAX_SAFE_INTEGER / 2) {
+    upperBound *= 2;
+  }
+
+  const lowerBound = Math.max(1, upperBound / 2);
+  return value - lowerBound < upperBound - value ? lowerBound : upperBound;
+}
+
+function positiveIntegerOrFallback(value: number, fallback: number): number {
+  const rounded = Math.round(value);
+  return Number.isSafeInteger(rounded) && rounded > 0 ? rounded : fallback;
+}
+
+function normalizeGeometryPatch(
+  level: CacheLevelConfig,
+  patch: Pick<Partial<CacheLevelConfig>, "totalSizeBytes" | "blockSizeBytes" | "associativity">,
+): Pick<CacheLevelConfig, "totalSizeBytes" | "blockSizeBytes" | "associativity"> {
+  const currentBlockSize = nearestPowerOfTwo(positiveIntegerOrFallback(level.blockSizeBytes, 1));
+  const currentAssociativity = nearestPowerOfTwo(positiveIntegerOrFallback(level.associativity, 1));
+
+  const nextBlockSize =
+    patch.blockSizeBytes === undefined
+      ? currentBlockSize
+      : nearestPowerOfTwo(positiveIntegerOrFallback(patch.blockSizeBytes, currentBlockSize));
+  const nextAssociativity =
+    patch.associativity === undefined
+      ? currentAssociativity
+      : nearestPowerOfTwo(positiveIntegerOrFallback(patch.associativity, currentAssociativity));
+
+  const rawTotalSize =
+    patch.totalSizeBytes === undefined
+      ? positiveIntegerOrFallback(level.totalSizeBytes, nextBlockSize * nextAssociativity)
+      : positiveIntegerOrFallback(patch.totalSizeBytes, level.totalSizeBytes);
+  const geometryUnit = nextBlockSize * nextAssociativity;
+  const targetSetCount = nearestPowerOfTwo(rawTotalSize / geometryUnit);
+
+  return {
+    blockSizeBytes: nextBlockSize,
+    associativity: nextAssociativity,
+    totalSizeBytes: geometryUnit * targetSetCount,
+  };
+}
+
 export function HierarchyBuilderPanel({ levels, warnings, onUpdateLevel }: HierarchyBuilderPanelProps) {
   const enabledCount = levels.filter((level) => level.enabled).length;
 
@@ -34,25 +83,34 @@ export function HierarchyBuilderPanel({ levels, warnings, onUpdateLevel }: Hiera
           <label>
             <span>Total size (bytes)</span>
             <input
+              aria-label={`${level.id} total size bytes`}
               type="number"
               value={level.totalSizeBytes}
-              onChange={(event) => onUpdateLevel(level.id, { totalSizeBytes: Number(event.currentTarget.value) })}
+              onChange={(event) =>
+                onUpdateLevel(level.id, normalizeGeometryPatch(level, { totalSizeBytes: Number(event.currentTarget.value) }))
+              }
             />
           </label>
           <label>
             <span>Block size (bytes)</span>
             <input
+              aria-label={`${level.id} block size bytes`}
               type="number"
               value={level.blockSizeBytes}
-              onChange={(event) => onUpdateLevel(level.id, { blockSizeBytes: Number(event.currentTarget.value) })}
+              onChange={(event) =>
+                onUpdateLevel(level.id, normalizeGeometryPatch(level, { blockSizeBytes: Number(event.currentTarget.value) }))
+              }
             />
           </label>
           <label>
             <span>Associativity</span>
             <input
+              aria-label={`${level.id} associativity`}
               type="number"
               value={level.associativity}
-              onChange={(event) => onUpdateLevel(level.id, { associativity: Number(event.currentTarget.value) })}
+              onChange={(event) =>
+                onUpdateLevel(level.id, normalizeGeometryPatch(level, { associativity: Number(event.currentTarget.value) }))
+              }
             />
           </label>
           <label>
