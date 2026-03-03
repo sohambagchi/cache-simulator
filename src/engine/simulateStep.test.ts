@@ -116,11 +116,17 @@ describe("simulateStep", () => {
     const state0 = createInitialState([
       createLevel({
         id: "L1",
+        totalSizeBytes: 1,
+        blockSizeBytes: 1,
+        associativity: 1,
         writeHitPolicy: "WRITE_BACK",
         writeMissPolicy: "WRITE_ALLOCATE"
       }),
       createLevel({
         id: "L2",
+        totalSizeBytes: 2,
+        blockSizeBytes: 1,
+        associativity: 2,
         writeHitPolicy: "WRITE_BACK",
         writeMissPolicy: "WRITE_ALLOCATE"
       })
@@ -711,5 +717,45 @@ describe("simulateStep", () => {
     expect(readEvictingDirtyLine.state.memory.slice(0, 4)).toEqual([
       10, 20, 99, 40
     ]);
+  });
+
+  it("INCLUSIVE write-allocate: write-miss fills block into L1 AND L2", () => {
+    // 2-level inclusive hierarchy, both WRITE_BACK + WRITE_ALLOCATE.
+    // A write-miss at L1 should allocate the block in both L1 (dirty) and L2 (clean).
+    const state0 = createInitialState(
+      [
+        createLevel({
+          id: "L1",
+          totalSizeBytes: 16,
+          blockSizeBytes: 4,
+          associativity: 1
+        }),
+        createLevel({
+          id: "L2",
+          totalSizeBytes: 64,
+          blockSizeBytes: 4,
+          associativity: 1
+        })
+      ],
+      "INCLUSIVE"
+    );
+
+    // Write to address 0 — both L1 and L2 are empty, so it's a miss everywhere.
+    const afterWrite = simulateStep(state0, {
+      kind: "W",
+      address: 0,
+      value: 42
+    });
+
+    const l1 = afterWrite.state.levels[0];
+    const l2 = afterWrite.state.levels[1];
+
+    // L1 should have the block installed (dirty, since WRITE_BACK)
+    expect(l1.sets[0].ways[0].valid).toBe(true);
+    expect(l1.sets[0].ways[0].dirty).toBe(true);
+
+    // L2 should also have the block installed (clean copy, inclusive invariant)
+    expect(l2.sets[0].ways[0].valid).toBe(true);
+    expect(l2.sets[0].ways[0].dirty).toBe(false);
   });
 });

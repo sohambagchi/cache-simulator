@@ -683,6 +683,25 @@ function forwardWrite(
         tick: mutable.tick,
         setInsertedAt: true
       });
+
+      // INCLUSIVE: also install clean copies in all deeper levels so the
+      // invariant (every L(n) block also exists in L(n+1)…) is preserved.
+      if (mutable.nextState.inclusionPolicy === "INCLUSIVE") {
+        for (
+          let fillIndex = levelIndex + 1;
+          fillIndex < mutable.nextState.levels.length;
+          fillIndex += 1
+        ) {
+          const deepTransfer = readBlockFromHierarchy(
+            mutable.nextState,
+            fillIndex,
+            address,
+            mutable.nextState.levels[fillIndex].config.blockSizeBytes
+          );
+          fillReadMissAtLevel(mutable, fillIndex, address, deepTransfer);
+        }
+      }
+
       return anyHit;
     }
 
