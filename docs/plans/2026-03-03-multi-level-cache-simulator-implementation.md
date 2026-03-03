@@ -107,7 +107,7 @@ git add .
 git commit -m "chore: scaffold vite react typescript simulator app"
 ```
 
-### Task 2: Define domain model and v1 boundaries in code
+### Task 2: Define domain model, finite memory bounds, and v1 boundaries in code
 
 **Files:**
 - Create: `src/domain/types.ts`
@@ -116,6 +116,7 @@ git commit -m "chore: scaffold vite react typescript simulator app"
 - Create: `src/test/factories.ts`
 - Test: `src/domain/types.test.ts`
 - Test: `src/domain/geometry.test.ts`
+- Test: `src/domain/constants.test.ts`
 
 **Step 1: Write failing domain tests**
 
@@ -131,6 +132,22 @@ describe("deriveGeometry", () => {
       offsetBits: 4,
       indexBits: 3
     });
+  });
+});
+```
+
+```ts
+// src/domain/constants.test.ts
+import { describe, it, expect } from "vitest";
+import { V1_LIMITS } from "./constants";
+
+describe("V1_LIMITS", () => {
+  it("defines finite memory address bounds and legal value range", () => {
+    expect(V1_LIMITS.memoryWords).toBe(1024);
+    expect(V1_LIMITS.minAddress).toBe(0);
+    expect(V1_LIMITS.maxAddress).toBe(1023);
+    expect(V1_LIMITS.minValue).toBe(0);
+    expect(V1_LIMITS.maxValue).toBe(255);
   });
 });
 ```
@@ -162,6 +179,11 @@ Expected: FAIL (`Cannot find module './geometry'`).
 export const V1_LIMITS = {
   minLevels: 1,
   maxLevels: 3,
+  memoryWords: 1024,
+  minAddress: 0,
+  maxAddress: 1023,
+  minValue: 0,
+  maxValue: 255,
   singleSimulationOnly: true,
   backendEnabled: false,
   compareModeEnabled: false
@@ -198,17 +220,17 @@ export function deriveGeometry(input: { totalSizeBytes: number; blockSizeBytes: 
 
 **Step 4: Run targeted tests**
 
-Run: `npm run test -- src/domain/types.test.ts src/domain/geometry.test.ts`
-Expected: PASS; geometry and type fixtures validate.
+Run: `npm run test -- src/domain/types.test.ts src/domain/geometry.test.ts src/domain/constants.test.ts`
+Expected: PASS; geometry, type fixtures, and finite bounds validate.
 
 **Step 5: Commit**
 
 ```bash
 git add src/domain src/test/factories.ts
-git commit -m "feat(domain): add cache hierarchy types and geometry helpers"
+git commit -m "feat(domain): add cache hierarchy types geometry and finite memory bounds"
 ```
 
-### Task 3: Build workload parser with line diagnostics
+### Task 3: Build workload parser with line diagnostics and range enforcement
 
 **Files:**
 - Create: `src/parser/parseWorkload.ts`
@@ -245,6 +267,22 @@ describe("parseWorkload", () => {
       expect.objectContaining({ line: 3 })
     ]);
   });
+
+  it("accepts lower and upper bounds for address/value", () => {
+    const result = parseWorkload("R 0\nR 1023\nW 0 0\nW 1023 255");
+    expect(result.errors).toEqual([]);
+    expect(result.ops).toHaveLength(4);
+  });
+
+  it("emits explicit out-of-range diagnostics for address and value", () => {
+    const result = parseWorkload("R -1\nR 1024\nW 4 256\nW 4 -1");
+    expect(result.errors).toEqual([
+      expect.objectContaining({ line: 1, message: expect.stringContaining("address out of range") }),
+      expect.objectContaining({ line: 2, message: expect.stringContaining("address out of range") }),
+      expect.objectContaining({ line: 3, message: expect.stringContaining("value out of range") }),
+      expect.objectContaining({ line: 4, message: expect.stringContaining("value out of range") })
+    ]);
+  });
 });
 ```
 
@@ -277,6 +315,10 @@ Implementation requirements:
 - Allow lowercase op tokens by normalizing to uppercase.
 - Ignore blank lines and `#` comments.
 - Emit explicit message text: `Line <n>: ...`.
+- Enforce v1 ranges from `V1_LIMITS`: addresses `0..1023`, values `0..255`.
+- Emit explicit out-of-range diagnostics:
+  - `Line <n>: address out of range (expected 0..1023)`
+  - `Line <n>: value out of range (expected 0..255)`
 - Do not throw on bad lines; continue parsing remaining lines.
 
 **Step 4: Run parser tests**
@@ -288,7 +330,7 @@ Expected: PASS; all parse and error scenarios are stable.
 
 ```bash
 git add src/parser
-git commit -m "feat(parser): add workload parser with line diagnostics"
+git commit -m "feat(parser): add workload parser diagnostics and range checks"
 ```
 
 ### Task 4: Implement configuration validation engine with warnings
@@ -445,6 +487,7 @@ Simulation requirements:
 - WA path must then apply WT/WB behavior after fill.
 - WNA path must bypass local fill and forward write to the next level (or memory at terminal level).
 - Preserve deterministic event ordering for all branches so timeline playback is stable.
+- Add runtime guardrail for direct engine calls: if op address/value violates `V1_LIMITS`, return explicit diagnostic (for example `Runtime: address out of range (expected 0..1023)`) and skip mutation.
 
 Required event payload fields:
 - `stage`: `decode | compare | hit | miss | fill | eviction | writeback | memory`.
@@ -475,6 +518,10 @@ it("handles write-miss WA + WB by filling then marking dirty", () => {
 it("handles write-miss WNA by bypassing local fill and forwarding downstream", () => {
   // assert no local allocation event and downstream (or memory) write occurs
 });
+
+it("returns explicit runtime diagnostic when an out-of-range op bypasses parser", () => {
+  // call simulateStep with address 1024 or value 256, assert no state mutation and diagnostic message
+});
 ```
 
 Run: `npm run test -- src/engine/simulateStep.test.ts`
@@ -494,6 +541,7 @@ git commit -m "feat(engine): add deterministic cache simulation pipeline"
 - Create: `src/state/reducer.ts`
 - Create: `src/state/store.tsx`
 - Create: `src/state/selectors.ts`
+- Create: `src/workloads/examples.ts`
 - Test: `src/state/reducer.test.ts`
 - Modify: `src/App.tsx`
 
@@ -505,6 +553,7 @@ import { describe, it, expect } from "vitest";
 import { reducer, initialAppState } from "./reducer";
 
 describe("app reducer", () => {
+  it("loads built-in example trace into editor text and parse preview", () => { /* LOAD_EXAMPLE_TRACE */ });
   it("loads parsed trace", () => { /* LOAD_TRACE */ });
   it("steps one operation", () => { /* STEP */ });
   it("advances on play tick", () => { /* PLAY_TICK */ });
@@ -513,6 +562,8 @@ describe("app reducer", () => {
   it("updates config and revalidates", () => { /* UPDATE_CONFIG */ });
   it("updates writeHitPolicy per level without mutating other levels", () => { /* UPDATE_CONFIG */ });
   it("updates writeMissPolicy per level without mutating other levels", () => { /* UPDATE_CONFIG */ });
+  it("blocks STEP and PLAY_TICK when parseResult.errors.length > 0", () => { /* gating */ });
+  it("allows STEP and PLAY_TICK when only warnings exist", () => { /* warning-only */ });
 });
 ```
 
@@ -526,12 +577,37 @@ Expected: FAIL (state modules missing).
 ```ts
 // src/state/actions.ts
 export type Action =
+  | { type: "LOAD_EXAMPLE_TRACE"; payload: { exampleId: string } }
   | { type: "LOAD_TRACE"; payload: { text: string } }
   | { type: "STEP" }
   | { type: "PLAY_TICK" }
   | { type: "PAUSE" }
   | { type: "RESET" }
   | { type: "UPDATE_CONFIG"; payload: { levelId: "L1" | "L2" | "L3"; patch: Partial<CacheLevelConfig> } };
+```
+
+```ts
+// src/workloads/examples.ts
+export const BUILTIN_WORKLOAD_EXAMPLES = [
+  {
+    id: "sequential-read-warmup",
+    label: "Sequential Read Warmup",
+    description: "Simple read walk to illustrate compulsory misses and then hits.",
+    text: "R 0\nR 4\nR 8\nR 0\nR 4"
+  },
+  {
+    id: "writeback-eviction-cascade",
+    label: "Write-Back Eviction Cascade",
+    description: "Writes that force dirty eviction and downstream write-back.",
+    text: "W 0 10\nW 64 20\nW 128 30\nR 0"
+  },
+  {
+    id: "wna-bypass-demo",
+    label: "Write-No-Allocate Bypass",
+    description: "Write misses that bypass local allocation under WNA.",
+    text: "W 32 7\nW 96 9\nR 32"
+  }
+] as const;
 ```
 
 ```ts
@@ -542,9 +618,12 @@ export function reducer(state: AppState, action: Action): AppState {
 ```
 
 Implementation requirements:
+- `LOAD_EXAMPLE_TRACE` must look up `exampleId` in `src/workloads/examples.ts`, set editor text, parse it, and refresh preview operations/diagnostics.
 - Keep `writeHitPolicy` and `writeMissPolicy` as separate fields in state for each level.
 - `UPDATE_CONFIG` must patch one level at a time by `levelId`; never broadcast policy changes to all levels.
 - Re-run config validation after each policy change and preserve warning vs error separation.
+- Hard-gate simulation controls in reducer: if `parseResult.errors.length > 0`, `STEP` and `PLAY_TICK` become no-ops and set blocking UI text `Fix parse errors before running simulation.`
+- Warning-only states remain runnable (warnings never trigger `STEP`/`RUN` blocking).
 
 **Step 4: Verify reducer behavior**
 
@@ -554,8 +633,8 @@ Expected: PASS; all required action paths produce deterministic state.
 **Step 5: Commit**
 
 ```bash
-git add src/state src/App.tsx
-git commit -m "feat(state): add immutable reducer and simulation controls"
+git add src/state src/workloads/examples.ts src/App.tsx
+git commit -m "feat(state): add reducer gating and built-in workload loading"
 ```
 
 ### Task 7: Build UI shell and simulator panels
@@ -593,6 +672,10 @@ it("keeps control bar visible and dispatches step/run/pause/reset", async () => 
 // src/ui/workload/WorkloadEditorPanel.test.tsx
 it("renders parser diagnostics preview with line numbers", async () => {
   // type invalid input; assert line-specific errors visible
+});
+
+it("loads selected built-in example into editor and parsed preview", async () => {
+  // choose example from selector; assert textarea text and parsed op preview update
 });
 ```
 
@@ -647,6 +730,7 @@ UI composition requirements:
 - Progressive disclosure defaults: hierarchy/workload/stats expanded, event timeline expanded while stepping, enabled cache levels expanded, memory collapsed.
 - Stats panel supports floating mode on desktop.
 - Workload editor includes parsed preview list.
+- Workload editor includes built-in example selector wired to `LOAD_EXAMPLE_TRACE`.
 - Event timeline is always available in results column.
 - Desktop-first two-column layout is the primary target; mobile is functional stacked fallback only (no parity requirement).
 
@@ -746,8 +830,16 @@ it("blocks simulation controls when config has hard validation errors", async ()
   // set invalid geometry, assert step/run disabled and inline errors visible
 });
 
+it("blocks simulation controls when parseResult.errors.length > 0", async () => {
+  // enter malformed workload, assert Step/Run disabled with parse blocking message
+});
+
 it("does not block simulation controls when only policy sensibility warnings exist", async () => {
   // set non-standard policy combo, assert warning visible and step/run remain enabled
+});
+
+it("keeps simulation runnable for warning-only parse/config state", async () => {
+  // load valid workload + non-blocking warnings, assert Step/Run enabled
 });
 ```
 
@@ -761,6 +853,8 @@ Expected: FAIL until flow wiring is complete.
 ```ts
 // Example behavior requirement
 // If validation.errors.length > 0, disable Step/Run and show "Fix configuration errors to simulate".
+// If parseResult.errors.length > 0, disable Step/Run and show "Fix parse errors before running simulation."
+// If warnings-only (parse warnings none, config warnings any), Step/Run remain enabled.
 ```
 
 **Step 4: Add and run E2E smoke for step/run/reset**
@@ -782,12 +876,11 @@ git add tests playwright.config.ts
 git commit -m "test: add integration and e2e coverage for simulator flow"
 ```
 
-### Task 10: Final verification, docs polish, and Vercel deploy readiness
+### Task 10: Final verification and docs polish (deployment optional)
 
 **Files:**
 - Modify: `README.md`
 - Create: `docs/verification/2026-03-03-multi-level-cache-simulator.md`
-- Modify: `vercel.json`
 
 **Step 1: Write verification checklist doc first**
 
@@ -812,22 +905,18 @@ Expected: PASS across all suites.
 Run: `npm run build && npm run preview`
 Expected: PASS; `dist/` created and app serves locally.
 
-**Step 4: Confirm Vercel static deployment settings**
+**Step 4: Document optional deployment follow-up (not part of core completion gate)**
 
-Run: `vercel --prod`
-Expected: successful static deployment with SPA routing.
-
-Deployment notes:
-- Framework preset: Vite.
-- Build command: `npm run build`.
-- Output directory: `dist`.
-- No serverless functions; no backend environment variables required for v1.
+Document in README/verification notes:
+- Core completion gate is local CI/test/build verification only.
+- Optional post-implementation deployment may be run separately (`vercel --prod`) after core gates are green.
+- Framework preset: Vite, output directory: `dist`, SPA routing via `vercel.json`.
 
 **Step 5: Commit final docs updates**
 
 ```bash
-git add README.md docs/verification vercel.json
-git commit -m "docs: add verification checklist and deployment notes"
+git add README.md docs/verification
+git commit -m "docs: add verification checklist and optional deployment note"
 ```
 
 ## Explicit v1 scope boundaries
