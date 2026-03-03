@@ -3,11 +3,7 @@ import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 import type { CacheLevelConfig, ValidationIssue } from "../../domain/types";
 import { HierarchyBuilderPanel } from "./HierarchyBuilderPanel";
-import {
-  GEOMETRY_SIZE_OPTIONS,
-  ASSOCIATIVITY_OPTIONS,
-  toSliderIndex
-} from "./sliderDomain";
+import { GEOMETRY_SIZE_OPTIONS, toSliderIndex } from "./sliderDomain";
 
 function createLevels(): CacheLevelConfig[] {
   return [
@@ -184,7 +180,7 @@ describe("HierarchyBuilderPanel", () => {
     });
 
     const l1Toggle = host.querySelector(
-      "fieldset input[type='checkbox']"
+      ".cache-level-card input[type='checkbox']"
     ) as HTMLInputElement;
     expect(l1Toggle.disabled).toBe(true);
 

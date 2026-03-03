@@ -15,29 +15,36 @@ describe("AppShell", () => {
     act(() => {
       root.render(
         <AppShell
-          controlBar={<div>controls</div>}
+          theme="light"
+          onToggleTheme={() => {}}
           hierarchyPanel={createPanel("hierarchy")}
           workloadPanel={createPanel("workload")}
           statsPanel={createPanel("stats")}
           cachePanel={createPanel("cache")}
           memoryPanel={createPanel("memory")}
-          timelinePanel={createPanel("timeline")}
-        />,
+          timelinePanel={() => null}
+        />
       );
     });
 
-    const hierarchyButton = host.querySelector('button[aria-controls="hierarchy-panel"]');
-    const workloadButton = host.querySelector('button[aria-controls="workload-panel"]');
-    const statsButton = host.querySelector('button[aria-controls="stats-panel"]');
-    const memoryButton = host.querySelector('button[aria-controls="memory-panel"]');
-    const timelineButton = host.querySelector('button[aria-controls="timeline-panel"]');
+    const hierarchyButton = host.querySelector(
+      'button[aria-controls="hierarchy-panel"]'
+    );
+    const workloadButton = host.querySelector(
+      'button[aria-controls="workload-panel"]'
+    );
+    const statsButton = host.querySelector(
+      'button[aria-controls="stats-panel"]'
+    );
+    const memoryButton = host.querySelector(
+      'button[aria-controls="memory-panel"]'
+    );
     const memoryPanel = host.querySelector("#memory-panel") as HTMLDivElement;
 
     expect(hierarchyButton?.getAttribute("aria-expanded")).toBe("true");
     expect(workloadButton?.getAttribute("aria-expanded")).toBe("true");
     expect(statsButton?.getAttribute("aria-expanded")).toBe("true");
     expect(memoryButton?.getAttribute("aria-expanded")).toBe("false");
-    expect(timelineButton?.getAttribute("aria-expanded")).toBe("true");
     expect(memoryPanel).toBeTruthy();
     expect(memoryPanel.hidden).toBe(true);
     expect(memoryPanel.getAttribute("aria-hidden")).toBe("true");
@@ -54,14 +61,15 @@ describe("AppShell", () => {
     act(() => {
       root.render(
         <AppShell
-          controlBar={<div>controls</div>}
+          theme="light"
+          onToggleTheme={() => {}}
           hierarchyPanel={createPanel("hierarchy")}
           workloadPanel={createPanel("workload")}
           statsPanel={createPanel("stats")}
           cachePanel={createPanel("cache")}
           memoryPanel={createPanel("memory")}
-          timelinePanel={createPanel("timeline")}
-        />,
+          timelinePanel={() => null}
+        />
       );
     });
 
@@ -69,6 +77,59 @@ describe("AppShell", () => {
     expect(host.querySelector(".app-shell__left")).toBeTruthy();
     expect(host.querySelector(".app-shell__right")).toBeTruthy();
     expect(host.querySelector(".app-shell__results")).toBeTruthy();
+
+    act(() => {
+      root.unmount();
+    });
+  });
+
+  it("opens timeline drawer when toggle button is clicked", () => {
+    const host = document.createElement("div");
+    const root = createRoot(host);
+
+    act(() => {
+      root.render(
+        <AppShell
+          theme="light"
+          onToggleTheme={() => {}}
+          hierarchyPanel={createPanel("hierarchy")}
+          workloadPanel={createPanel("workload")}
+          statsPanel={createPanel("stats")}
+          cachePanel={createPanel("cache")}
+          memoryPanel={createPanel("memory")}
+          timelinePanel={(isOpen, onClose) =>
+            isOpen ? (
+              <div data-testid="timeline-drawer">
+                <button onClick={onClose}>Close</button>
+              </div>
+            ) : null
+          }
+        />
+      );
+    });
+
+    // Drawer should be closed initially
+    expect(host.querySelector('[data-testid="timeline-drawer"]')).toBeNull();
+
+    // Click the toggle button
+    const toggleBtn = host.querySelector('button[aria-label="Open timeline"]');
+    expect(toggleBtn).toBeTruthy();
+    act(() => {
+      toggleBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    // Drawer should be open
+    expect(host.querySelector('[data-testid="timeline-drawer"]')).toBeTruthy();
+
+    // Close the drawer
+    const closeBtn = host.querySelector(
+      '[data-testid="timeline-drawer"] button'
+    );
+    act(() => {
+      closeBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(host.querySelector('[data-testid="timeline-drawer"]')).toBeNull();
 
     act(() => {
       root.unmount();

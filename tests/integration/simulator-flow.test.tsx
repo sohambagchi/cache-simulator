@@ -5,7 +5,7 @@ import { App } from "../../src/App";
 
 function clickButton(host: HTMLDivElement, label: string): void {
   const button = Array.from(host.querySelectorAll("button")).find(
-    (entry) => entry.textContent?.trim() === label,
+    (entry) => entry.textContent?.trim() === label
   );
 
   if (!button) {
@@ -17,7 +17,7 @@ function clickButton(host: HTMLDivElement, label: string): void {
 
 function getProgress(host: HTMLDivElement): string {
   const progressLabel = Array.from(host.querySelectorAll("dt")).find(
-    (entry) => entry.textContent?.trim() === "Progress",
+    (entry) => entry.textContent?.trim() === "Progress"
   );
 
   if (!progressLabel) {
@@ -42,6 +42,14 @@ function selectBuiltInExample(host: HTMLDivElement, exampleId: string): void {
   select.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
+function openTimeline(host: HTMLDivElement): void {
+  const btn = host.querySelector('button[aria-label="Open timeline"]');
+  if (!btn) {
+    throw new Error("Timeline toggle button not found");
+  }
+  btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+}
+
 describe("simulator integration flow", () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -62,6 +70,11 @@ describe("simulator integration flow", () => {
     });
 
     expect(getProgress(host)).toBe("0/4");
+
+    // Open timeline drawer to verify empty state
+    act(() => {
+      openTimeline(host);
+    });
     expect(host.textContent).toContain("No events yet");
 
     act(() => {
@@ -69,13 +82,25 @@ describe("simulator integration flow", () => {
     });
 
     expect(getProgress(host)).toBe("1/4");
-    expect(host.querySelectorAll(".timeline-list li").length).toBeGreaterThan(0);
+    expect(host.querySelectorAll(".timeline-list li").length).toBeGreaterThan(
+      0
+    );
+
+    // Close the drawer (click backdrop or close button)
+    const closeBtn = host.querySelector('button[aria-label="Close timeline"]');
+    act(() => {
+      closeBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
 
     act(() => {
       clickButton(host, "Run");
     });
 
-    expect(host.querySelector("[data-testid='global-control-bar']")?.getAttribute("data-playing")).toBe("true");
+    expect(
+      host
+        .querySelector("[data-testid='global-control-bar']")
+        ?.getAttribute("data-playing")
+    ).toBe("true");
 
     act(() => {
       vi.advanceTimersByTime(700);
@@ -87,13 +112,22 @@ describe("simulator integration flow", () => {
       clickButton(host, "Pause");
     });
 
-    expect(host.querySelector("[data-testid='global-control-bar']")?.getAttribute("data-playing")).toBe("false");
+    expect(
+      host
+        .querySelector("[data-testid='global-control-bar']")
+        ?.getAttribute("data-playing")
+    ).toBe("false");
 
     act(() => {
       clickButton(host, "Reset");
     });
 
     expect(getProgress(host)).toBe("0/4");
+
+    // Open timeline to verify it's cleared
+    act(() => {
+      openTimeline(host);
+    });
     expect(host.textContent).toContain("No events yet");
 
     act(() => {

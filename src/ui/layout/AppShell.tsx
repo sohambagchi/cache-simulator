@@ -1,57 +1,92 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { CollapsibleCard } from "../common/CollapsibleCard";
+import { ThemeToggle, type ThemeMode } from "../common/ThemeToggle";
 
 type AppShellProps = {
   heading?: string;
-  controlBar: ReactNode;
+  theme: ThemeMode;
+  onToggleTheme: () => void;
   hierarchyPanel: ReactNode;
   workloadPanel: ReactNode;
   statsPanel: ReactNode;
   cachePanel: ReactNode;
   memoryPanel: ReactNode;
-  timelinePanel: ReactNode;
+  timelinePanel: (isOpen: boolean, onClose: () => void) => ReactNode;
 };
 
 export function AppShell({
   heading = "Multi-Level Cache Simulator",
-  controlBar,
+  theme,
+  onToggleTheme,
   hierarchyPanel,
   workloadPanel,
   statsPanel,
   cachePanel,
   memoryPanel,
-  timelinePanel,
+  timelinePanel
 }: AppShellProps) {
+  const [timelineOpen, setTimelineOpen] = useState(false);
+
   return (
     <main className="app-shell">
-      <h1>{heading}</h1>
-      <div className="app-shell__top">{controlBar}</div>
+      <div className="app-shell__header">
+        <h1>{heading}</h1>
+        <div className="app-shell__header-actions">
+          <button
+            className="timeline-toggle-btn"
+            type="button"
+            onClick={() => setTimelineOpen(true)}
+            aria-label="Open timeline"
+          >
+            Timeline
+          </button>
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+        </div>
+      </div>
       <div className="app-shell__columns">
         <section className="app-shell__left">
-          <CollapsibleCard title="Hierarchy" defaultExpanded={true} sectionId="hierarchy-panel">
+          <CollapsibleCard
+            title="Hierarchy"
+            defaultExpanded={true}
+            sectionId="hierarchy-panel"
+          >
             {hierarchyPanel}
           </CollapsibleCard>
-          <CollapsibleCard title="Workload" defaultExpanded={true} sectionId="workload-panel">
+          <CollapsibleCard
+            title="Workload"
+            defaultExpanded={true}
+            sectionId="workload-panel"
+          >
             {workloadPanel}
           </CollapsibleCard>
         </section>
         <section className="app-shell__right">
-          <CollapsibleCard title="Stats" defaultExpanded={true} sectionId="stats-panel">
+          <CollapsibleCard
+            title="Stats"
+            defaultExpanded={true}
+            sectionId="stats-panel"
+          >
             {statsPanel}
           </CollapsibleCard>
           <section className="app-shell__results">
-            <CollapsibleCard title="Cache" defaultExpanded={true} sectionId="cache-panel">
+            <CollapsibleCard
+              title="Cache"
+              defaultExpanded={true}
+              sectionId="cache-panel"
+            >
               {cachePanel}
             </CollapsibleCard>
-            <CollapsibleCard title="Memory" defaultExpanded={false} sectionId="memory-panel">
+            <CollapsibleCard
+              title="Memory"
+              defaultExpanded={false}
+              sectionId="memory-panel"
+            >
               {memoryPanel}
-            </CollapsibleCard>
-            <CollapsibleCard title="Timeline" defaultExpanded={true} sectionId="timeline-panel">
-              {timelinePanel}
             </CollapsibleCard>
           </section>
         </section>
       </div>
+      {timelinePanel(timelineOpen, () => setTimelineOpen(false))}
     </main>
   );
 }

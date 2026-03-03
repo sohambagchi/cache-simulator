@@ -1,13 +1,12 @@
 import { StoreProvider } from "./state/store";
 import { useStore } from "./state/store";
 import { selectCanRunSimulation } from "./state/selectors";
-import { GlobalControlBar } from "./ui/controls/GlobalControlBar";
 import { HierarchyBuilderPanel } from "./ui/config/HierarchyBuilderPanel";
-import { WorkloadEditorPanel } from "./ui/workload/WorkloadEditorPanel";
+import { WorkloadPanel } from "./ui/workload/WorkloadPanel";
 import { StatsPanel } from "./ui/stats/StatsPanel";
 import { CacheVisualizationPanel } from "./ui/cache/CacheVisualizationPanel";
 import { MemoryPanel } from "./ui/memory/MemoryPanel";
-import { EventTimelinePanel } from "./ui/timeline/EventTimelinePanel";
+import { TimelineDrawer } from "./ui/timeline/TimelineDrawer";
 import { AppShell } from "./ui/layout/AppShell";
 import { BUILTIN_WORKLOAD_EXAMPLES } from "./workloads/examples";
 import { useEffect, useState } from "react";
@@ -63,19 +62,9 @@ function AppContent() {
 
   return (
     <AppShell
-      controlBar={
-        <GlobalControlBar
-          canRun={canRun}
-          isPlaying={state.isPlaying}
-          statusMessage={state.statusMessage}
-          playbackSpeedMs={playbackSpeedMs}
-          theme={theme}
-          onToggleTheme={() =>
-            setTheme((currentTheme) => getNextTheme(currentTheme))
-          }
-          onPlaybackSpeedChange={setPlaybackSpeedMs}
-          onDispatch={dispatch}
-        />
+      theme={theme}
+      onToggleTheme={() =>
+        setTheme((currentTheme) => getNextTheme(currentTheme))
       }
       hierarchyPanel={
         <HierarchyBuilderPanel
@@ -88,7 +77,15 @@ function AppContent() {
         />
       }
       workloadPanel={
-        <WorkloadEditorPanel
+        <WorkloadPanel
+          canRun={canRun}
+          isPlaying={state.isPlaying}
+          statusMessage={state.statusMessage}
+          playbackSpeedMs={playbackSpeedMs}
+          onPlaybackSpeedChange={setPlaybackSpeedMs}
+          onDispatch={dispatch}
+          nextOpIndex={state.nextOpIndex}
+          totalOps={state.parseResult.ops.length}
           workloadText={state.workloadText}
           parseResult={state.parseResult}
           examples={BUILTIN_WORKLOAD_EXAMPLES}
@@ -104,8 +101,6 @@ function AppContent() {
         <StatsPanel
           stats={state.simState.stats}
           levels={state.simState.levels.map((level) => level.id)}
-          nextOpIndex={state.nextOpIndex}
-          totalOps={state.parseResult.ops.length}
         />
       }
       cachePanel={
@@ -120,7 +115,13 @@ function AppContent() {
           events={state.simState.events}
         />
       }
-      timelinePanel={<EventTimelinePanel events={state.simState.events} />}
+      timelinePanel={(isOpen, onClose) => (
+        <TimelineDrawer
+          events={state.simState.events}
+          isOpen={isOpen}
+          onClose={onClose}
+        />
+      )}
     />
   );
 }

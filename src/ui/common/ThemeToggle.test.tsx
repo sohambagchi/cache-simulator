@@ -14,7 +14,7 @@ describe("ThemeToggle", () => {
 
     const button = host.querySelector('button[data-testid="theme-toggle"]');
     expect(button?.getAttribute("aria-pressed")).toBe("false");
-    expect(button?.textContent).toContain("Light");
+    expect(button?.textContent).toContain("\u2600");
 
     act(() => {
       root.unmount();
@@ -32,7 +32,7 @@ describe("ThemeToggle", () => {
     const button = host.querySelector('button[data-testid="theme-toggle"]');
     expect(button).toBeTruthy();
     expect(button?.getAttribute("aria-pressed")).toBe("true");
-    expect(button?.textContent).toContain("Dark");
+    expect(button?.textContent).toContain("\u263D");
 
     act(() => {
       root.unmount();

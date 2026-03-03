@@ -6,7 +6,6 @@ type ThemeToggleProps = {
 };
 
 export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
-
   return (
     <button
       type="button"
@@ -16,7 +15,7 @@ export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
       aria-pressed={theme === "dark"}
       onClick={onToggle}
     >
-      Theme: {theme === "light" ? "Light" : "Dark"}
+      {theme === "light" ? "\u2600" : "\u263D"}
     </button>
   );
 }
