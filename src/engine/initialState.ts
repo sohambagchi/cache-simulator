@@ -49,6 +49,7 @@ export type CacheLineState = {
   dirty: boolean;
   lastUsedAt: number;
   insertedAt: number;
+  accessedOffsets: number[];
 };
 
 export type CacheSetState = {
@@ -105,7 +106,8 @@ function createEmptyLine(blockSizeBytes: number): CacheLineState {
     dataBytes: Array.from({ length: blockSizeBytes }, () => 0),
     dirty: false,
     lastUsedAt: 0,
-    insertedAt: 0
+    insertedAt: 0,
+    accessedOffsets: []
   };
 }
 

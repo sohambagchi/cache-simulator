@@ -151,7 +151,19 @@ export function CacheVisualizationPanel({
                             {way.valid ? (
                               <span className="cache-data-bytes">
                                 {way.dataBytes.map((byte, byteIndex) => (
-                                  <span key={byteIndex} className="cache-byte">
+                                  <span
+                                    key={byteIndex}
+                                    className={[
+                                      "cache-byte",
+                                      (way.accessedOffsets ?? []).includes(
+                                        byteIndex
+                                      )
+                                        ? "cache-byte--accessed"
+                                        : ""
+                                    ]
+                                      .join(" ")
+                                      .trim()}
+                                  >
                                     {byte}
                                   </span>
                                 ))}

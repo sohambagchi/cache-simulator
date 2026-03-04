@@ -17,8 +17,12 @@ describe("App", () => {
       root.render(<App />);
     });
 
-    const speedSelect = host.querySelector('select[aria-label="Playback speed"]') as HTMLSelectElement;
-    const runButton = host.querySelector('button[data-action="run"]') as HTMLButtonElement;
+    const speedSelect = host.querySelector(
+      'select[aria-label="Playback speed"]'
+    ) as HTMLSelectElement;
+    const runButton = host.querySelector(
+      'button[data-action="run"]'
+    ) as HTMLButtonElement;
 
     act(() => {
       speedSelect.value = "1000";
@@ -26,17 +30,17 @@ describe("App", () => {
       runButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(host.textContent).toContain("0/5");
+    expect(host.textContent).toContain("0/12");
 
     act(() => {
       vi.advanceTimersByTime(999);
     });
-    expect(host.textContent).toContain("0/5");
+    expect(host.textContent).toContain("0/12");
 
     act(() => {
       vi.advanceTimersByTime(1);
     });
-    expect(host.textContent).toContain("1/5");
+    expect(host.textContent).toContain("1/12");
 
     act(() => {
       root.unmount();

@@ -28,7 +28,11 @@ function cloneState(state: SimState): SimState {
     levels: state.levels.map((level) => ({
       ...level,
       sets: level.sets.map((set) => ({
-        ways: set.ways.map((way) => ({ ...way, dataBytes: [...way.dataBytes] }))
+        ways: set.ways.map((way) => ({
+          ...way,
+          dataBytes: [...way.dataBytes],
+          accessedOffsets: [...way.accessedOffsets]
+        }))
       }))
     })),
     memory: [...state.memory],
@@ -243,6 +247,7 @@ function setLine(
     dirty: boolean;
     tick: number;
     setInsertedAt: boolean;
+    accessOffset?: number;
   }
 ): void {
   line.valid = true;
@@ -253,6 +258,13 @@ function setLine(
 
   if (values.setInsertedAt) {
     line.insertedAt = values.tick;
+    // Reset accessed offsets for the new block; record the triggering access if provided
+    line.accessedOffsets =
+      values.accessOffset !== undefined ? [values.accessOffset] : [];
+  } else if (values.accessOffset !== undefined) {
+    if (!line.accessedOffsets.includes(values.accessOffset)) {
+      line.accessedOffsets = [...line.accessedOffsets, values.accessOffset];
+    }
   }
 }
 
@@ -380,7 +392,8 @@ function fillReadMissAtLevel(
     dataBytes: blockTransfer.dataBytes,
     dirty: false,
     tick: mutable.tick,
-    setInsertedAt: true
+    setInsertedAt: true,
+    accessOffset: decoded.offset
   });
 
   // EXCLUSIVE: invalidate the block from level N+1 after filling it into level N
@@ -487,7 +500,8 @@ function forwardWrite(
           dataBytes: mergedDataBytes,
           dirty: true,
           tick: mutable.tick,
-          setInsertedAt: false
+          setInsertedAt: false,
+          accessOffset: decoded.offset
         });
         return anyHit;
       }
@@ -497,7 +511,8 @@ function forwardWrite(
         dataBytes: mergedDataBytes,
         dirty: false,
         tick: mutable.tick,
-        setInsertedAt: false
+        setInsertedAt: false,
+        accessOffset: decoded.offset
       });
       continue;
     }
@@ -681,7 +696,8 @@ function forwardWrite(
         dataBytes: mergedDataBytes,
         dirty: true,
         tick: mutable.tick,
-        setInsertedAt: true
+        setInsertedAt: true,
+        accessOffset: decoded.offset
       });
 
       // INCLUSIVE: also install clean copies in all deeper levels so the
@@ -710,7 +726,8 @@ function forwardWrite(
       dataBytes: mergedDataBytes,
       dirty: false,
       tick: mutable.tick,
-      setInsertedAt: true
+      setInsertedAt: true,
+      accessOffset: decoded.offset
     });
     continue;
   }
@@ -829,6 +846,10 @@ function applyRead(mutable: MutableStep, address: number): void {
         offset: decoded.offset
       });
       set.ways[hitWay].lastUsedAt = mutable.tick;
+      const hitLine = set.ways[hitWay];
+      if (!hitLine.accessedOffsets.includes(decoded.offset)) {
+        hitLine.accessedOffsets = [...hitLine.accessedOffsets, decoded.offset];
+      }
       mutable.nextState.stats.hits += 1;
       break;
     }

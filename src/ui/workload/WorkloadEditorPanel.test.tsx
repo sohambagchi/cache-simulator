@@ -84,14 +84,14 @@ describe("WorkloadEditorPanel", () => {
       'select[aria-label="Built-in example"]'
     ) as HTMLSelectElement;
     act(() => {
-      select.value = "sequential-read-warmup";
+      select.value = "spatial-locality";
       select.dispatchEvent(new Event("change", { bubbles: true }));
     });
 
     const textarea = host.querySelector(
       'textarea[aria-label="Workload trace"]'
     ) as HTMLTextAreaElement;
-    expect(textarea.value).toBe("R 0\nR 4\nR 8\nR 0\nR 4");
+    expect(textarea.value).toBe(BUILTIN_WORKLOAD_EXAMPLES[0].text);
 
     act(() => {
       root.unmount();

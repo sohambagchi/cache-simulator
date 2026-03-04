@@ -547,6 +547,11 @@ h1 {
   border-right: none;
 }
 
+.cache-byte--accessed {
+  font-weight: 700;
+  opacity: 1;
+}
+
 /* ── Row state & highlight cues ───────────────────────── */
 /* Highlights apply only to way/tag/data cells, not the rowSpan'd set cell */
 

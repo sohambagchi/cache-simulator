@@ -66,10 +66,10 @@ describe("simulator integration flow", () => {
     });
 
     act(() => {
-      selectBuiltInExample(host, "writeback-eviction-cascade");
+      selectBuiltInExample(host, "writeback-write-allocate");
     });
 
-    expect(getProgress(host)).toBe("0/4");
+    expect(getProgress(host)).toBe("0/8");
 
     // Open timeline drawer to verify empty state
     act(() => {
@@ -81,7 +81,7 @@ describe("simulator integration flow", () => {
       clickButton(host, "Step");
     });
 
-    expect(getProgress(host)).toBe("1/4");
+    expect(getProgress(host)).toBe("1/8");
     expect(
       host.querySelectorAll(".timeline-op-list li").length
     ).toBeGreaterThan(0);
@@ -106,7 +106,7 @@ describe("simulator integration flow", () => {
       vi.advanceTimersByTime(700);
     });
 
-    expect(getProgress(host)).not.toBe("1/4");
+    expect(getProgress(host)).not.toBe("1/8");
 
     act(() => {
       clickButton(host, "Pause");
@@ -122,7 +122,7 @@ describe("simulator integration flow", () => {
       clickButton(host, "Reset");
     });
 
-    expect(getProgress(host)).toBe("0/4");
+    expect(getProgress(host)).toBe("0/8");
 
     // Open timeline to verify it's cleared
     act(() => {
