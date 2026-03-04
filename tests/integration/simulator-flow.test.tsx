@@ -82,9 +82,9 @@ describe("simulator integration flow", () => {
     });
 
     expect(getProgress(host)).toBe("1/4");
-    expect(host.querySelectorAll(".timeline-list li").length).toBeGreaterThan(
-      0
-    );
+    expect(
+      host.querySelectorAll(".timeline-op-list li").length
+    ).toBeGreaterThan(0);
 
     // Close the drawer (click backdrop or close button)
     const closeBtn = host.querySelector('button[aria-label="Close timeline"]');

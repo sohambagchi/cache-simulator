@@ -46,15 +46,15 @@ function createLevels(): CacheLevelConfig[] {
 
 function Harness({
   warnings = [],
-  errors = []
+  errors = [],
+  initialTab = "L1"
 }: {
   warnings?: ValidationIssue[];
   errors?: ValidationIssue[];
+  initialTab?: string;
 }) {
   const [levels, setLevels] = useState(createLevels);
-  const [inclusionPolicy, setInclusionPolicy] = useState<
-    "INCLUSIVE" | "EXCLUSIVE"
-  >("INCLUSIVE");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const l2MissValue = useMemo(
     () => levels.find((level) => level.id === "L2")?.writeMissPolicy ?? "",
     [levels]
@@ -66,8 +66,8 @@ function Harness({
         levels={levels}
         warnings={warnings}
         errors={errors}
-        inclusionPolicy={inclusionPolicy}
-        onUpdateInclusionPolicy={setInclusionPolicy}
+        activeTab={activeTab}
+        onSetActiveTab={setActiveTab}
         onUpdateLevel={(levelId, patch) => {
           setLevels((current) =>
             current.map((level) =>
@@ -99,8 +99,8 @@ describe("HierarchyBuilderPanel", () => {
         <HierarchyBuilderPanel
           levels={createLevels()}
           warnings={[]}
-          inclusionPolicy="INCLUSIVE"
-          onUpdateInclusionPolicy={() => undefined}
+          activeTab="L1"
+          onSetActiveTab={() => undefined}
           onUpdateLevel={() => undefined}
         />
       );
@@ -147,8 +147,8 @@ describe("HierarchyBuilderPanel", () => {
         <HierarchyBuilderPanel
           levels={createLevels()}
           warnings={[]}
-          inclusionPolicy="INCLUSIVE"
-          onUpdateInclusionPolicy={() => undefined}
+          activeTab="L1"
+          onSetActiveTab={() => undefined}
           onUpdateLevel={onUpdateLevel}
         />
       );
@@ -187,16 +187,19 @@ describe("HierarchyBuilderPanel", () => {
         <HierarchyBuilderPanel
           levels={levels}
           warnings={[]}
-          inclusionPolicy="INCLUSIVE"
-          onUpdateInclusionPolicy={() => undefined}
+          activeTab="L1"
+          onSetActiveTab={() => undefined}
           onUpdateLevel={() => undefined}
         />
       );
     });
 
-    const l1Toggle = host.querySelector(
-      ".cache-level-card input[type='checkbox']"
-    ) as HTMLInputElement;
+    // The enable checkbox for L1 is in .cache-tab__check
+    const enableItems = host.querySelectorAll(
+      ".cache-tab__check"
+    ) as NodeListOf<HTMLInputElement>;
+    // L1 is the first item
+    const l1Toggle = enableItems[0];
     expect(l1Toggle.disabled).toBe(true);
 
     act(() => {
@@ -208,19 +211,29 @@ describe("HierarchyBuilderPanel", () => {
     const host = document.createElement("div");
     const root = createRoot(host);
 
+    // Start on L2 tab so we can verify L2's write miss select
     act(() => {
-      root.render(<Harness />);
+      root.render(<Harness initialTab="L2" />);
     });
 
-    const l1WriteMiss = host.querySelector(
-      'select[aria-label="L1 write miss policy"]'
-    ) as HTMLSelectElement;
+    // L2 controls are visible (active tab)
     const l2WriteMiss = host.querySelector(
       'select[aria-label="L2 write miss policy"]'
     ) as HTMLSelectElement;
 
     expect(l2WriteMiss.value).toBe("WRITE_ALLOCATE");
 
+    // Switch to L1 tab to edit L1's write miss
+    const l1Tab = host.querySelector(
+      '[role="tab"][id="cache-tab-L1"]'
+    ) as HTMLButtonElement;
+    act(() => {
+      l1Tab.click();
+    });
+
+    const l1WriteMiss = host.querySelector(
+      'select[aria-label="L1 write miss policy"]'
+    ) as HTMLSelectElement;
     act(() => {
       l1WriteMiss.value = "WRITE_NO_ALLOCATE";
       l1WriteMiss.dispatchEvent(new Event("change", { bubbles: true }));
@@ -286,8 +299,9 @@ describe("HierarchyBuilderPanel", () => {
       }
     ];
 
+    // Start on L2 tab so error messages and aria-invalid are visible
     act(() => {
-      root.render(<Harness errors={errors} />);
+      root.render(<Harness errors={errors} initialTab="L2" />);
     });
 
     expect(host.textContent).toContain(
@@ -345,8 +359,8 @@ describe("HierarchyBuilderPanel", () => {
         <HierarchyBuilderPanel
           levels={levels}
           warnings={[]}
-          inclusionPolicy="INCLUSIVE"
-          onUpdateInclusionPolicy={() => undefined}
+          activeTab="L2"
+          onSetActiveTab={() => undefined}
           onUpdateLevel={onUpdateLevel}
         />
       );

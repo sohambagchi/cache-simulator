@@ -14,9 +14,10 @@ export function WorkloadEditorPanel({
   parseResult,
   examples,
   onChangeTrace,
-  onSelectExample,
+  onSelectExample
 }: WorkloadEditorPanelProps) {
-  const selectedExampleId = examples.find((example) => example.text === workloadText)?.id ?? "";
+  const selectedExampleId =
+    examples.find((example) => example.text === workloadText)?.id ?? "";
 
   return (
     <div className="panel-stack">
@@ -48,29 +49,14 @@ export function WorkloadEditorPanel({
         />
       </label>
 
-      <section>
-        <h3>Parsed preview</h3>
-        <ul>
-          {parseResult.ops.map((op, index) => (
-            <li key={`${op.kind}-${op.address}-${index}`}>
-              {op.kind === "W" ? `W @ ${op.address} = ${op.value}` : `R @ ${op.address}`}
-            </li>
+      {/* Parse errors — only shown when present */}
+      {parseResult.errors.length > 0 && (
+        <ul className="warning-list" aria-label="Parse errors">
+          {parseResult.errors.map((error, index) => (
+            <li key={`${error.line}-${index}`}>{error.message}</li>
           ))}
         </ul>
-      </section>
-
-      <section>
-        <h3>Diagnostics</h3>
-        {parseResult.errors.length === 0 ? (
-          <p>No parse errors</p>
-        ) : (
-          <ul>
-            {parseResult.errors.map((error, index) => (
-              <li key={`${error.line}-${index}`}>{error.message}</li>
-            ))}
-          </ul>
-        )}
-      </section>
+      )}
     </div>
   );
 }

@@ -1,12 +1,16 @@
 import { type ReactNode, useState } from "react";
 import { CollapsibleCard } from "../common/CollapsibleCard";
 import { ThemeToggle, type ThemeMode } from "../common/ThemeToggle";
+import type { InclusionPolicy } from "../../domain/types";
 
 type AppShellProps = {
   heading?: string;
   theme: ThemeMode;
   onToggleTheme: () => void;
+  insightPanel?: ReactNode;
+  formulaPanel?: ReactNode;
   hierarchyPanel: ReactNode;
+  hierarchyHeaderActions?: ReactNode;
   workloadPanel: ReactNode;
   statsPanel: ReactNode;
   cachePanel: ReactNode;
@@ -18,7 +22,10 @@ export function AppShell({
   heading = "Caches",
   theme,
   onToggleTheme,
+  insightPanel,
+  formulaPanel,
   hierarchyPanel,
+  hierarchyHeaderActions,
   workloadPanel,
   statsPanel,
   cachePanel,
@@ -31,6 +38,12 @@ export function AppShell({
     <main className="app-shell">
       <div className="app-shell__header">
         <h1>{heading}</h1>
+        {insightPanel && (
+          <div className="app-shell__header-insight">{insightPanel}</div>
+        )}
+        {formulaPanel && (
+          <div className="app-shell__header-formula">{formulaPanel}</div>
+        )}
         <div className="app-shell__header-actions">
           <button
             className="btn timeline-toggle-btn"
@@ -46,18 +59,19 @@ export function AppShell({
       <div className="app-shell__columns">
         <section className="app-shell__left">
           <CollapsibleCard
-            title="Hierarchy"
-            defaultExpanded={true}
-            sectionId="hierarchy-panel"
-          >
-            {hierarchyPanel}
-          </CollapsibleCard>
-          <CollapsibleCard
             title="Workload"
             defaultExpanded={true}
             sectionId="workload-panel"
           >
             {workloadPanel}
+          </CollapsibleCard>
+          <CollapsibleCard
+            title="Hierarchy"
+            defaultExpanded={true}
+            sectionId="hierarchy-panel"
+            headerActions={hierarchyHeaderActions}
+          >
+            {hierarchyPanel}
           </CollapsibleCard>
         </section>
         <section className="app-shell__right">
@@ -90,3 +104,5 @@ export function AppShell({
     </main>
   );
 }
+
+export type { InclusionPolicy };
