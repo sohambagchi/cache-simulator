@@ -3,11 +3,7 @@ import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 import type { CacheLevelConfig, ValidationIssue } from "../../domain/types";
 import { HierarchyBuilderPanel } from "./HierarchyBuilderPanel";
-import {
-  TOTAL_SIZE_OPTIONS,
-  BLOCK_SIZE_OPTIONS,
-  toSliderIndex
-} from "./sliderDomain";
+import { TOTAL_SIZE_OPTIONS, toSliderIndex } from "./sliderDomain";
 
 function createLevels(): CacheLevelConfig[] {
   return [

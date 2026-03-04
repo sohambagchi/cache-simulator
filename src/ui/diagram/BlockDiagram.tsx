@@ -166,12 +166,6 @@ export function BlockDiagram({
     [allNodes]
   );
 
-  const nodeMap = useMemo(() => {
-    const m = new Map<string, (typeof positionedNodes)[0]>();
-    for (const n of positionedNodes) m.set(n.id, n);
-    return m;
-  }, [positionedNodes]);
-
   const nodeStates = useMemo(
     () => deriveNodeStates(activeEvent, enabledLevels),
     [activeEvent, enabledLevels]
