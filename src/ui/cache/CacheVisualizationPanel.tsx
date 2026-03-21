@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { encodeAddress } from "../../engine/addressing";
 import type { CacheLevelState, SimEvent } from "../../engine/initialState";
 import { CollapsibleCard } from "../common/CollapsibleCard";
 
@@ -28,13 +30,44 @@ function StatusDot({
     active ? "status-dot--on" : "status-dot--off"
   ].join(" ");
 
-  return <span className={className} title={label} aria-label={label} />;
+  return <span className={className} data-tooltip={label} aria-label={label} />;
+}
+
+function ColToggleBtn({
+  symbol,
+  expanded,
+  label,
+  onToggle
+}: {
+  symbol: string;
+  expanded: boolean;
+  label: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={[
+        "cache-col-btn",
+        expanded ? "cache-col-btn--expanded" : "cache-col-btn--collapsed"
+      ].join(" ")}
+      aria-pressed={expanded}
+      title={`${expanded ? "Hide" : "Show"} ${label} column`}
+      onClick={onToggle}
+    >
+      {symbol}
+    </button>
+  );
 }
 
 export function CacheVisualizationPanel({
   levels,
   events
 }: CacheVisualizationPanelProps) {
+  const [showWay, setShowWay] = useState(true);
+  const [showTag, setShowTag] = useState(true);
+  const [showAddress, setShowAddress] = useState(true);
+
   const currentOperationId = events[events.length - 1]?.operationId;
   const currentOperationEvents = currentOperationId
     ? events.filter((event) => event.operationId === currentOperationId)
@@ -62,6 +95,7 @@ export function CacheVisualizationPanel({
     <div className="panel-stack">
       {levels.map((level) => {
         const levelEvent = latestLevelEvent(level.id);
+        const { offsetBits, indexBits } = level.geometry;
 
         return (
           <CollapsibleCard
@@ -75,17 +109,67 @@ export function CacheVisualizationPanel({
               data-testid={`cache-level-${level.id}`}
               data-active={activeLevelId === level.id ? "true" : "false"}
             >
-              <table className="cache-table">
+              <table
+                className="cache-table"
+                data-way-collapsed={showWay ? "false" : "true"}
+                data-tag-collapsed={showTag ? "false" : "true"}
+                data-address-collapsed={showAddress ? "false" : "true"}
+              >
                 <thead>
                   <tr>
                     <th scope="col" className="cache-th cache-th--set">
                       Set
                     </th>
-                    <th scope="col" className="cache-th cache-th--way">
-                      Way
+                    <th
+                      scope="col"
+                      className={[
+                        "cache-th cache-th--way",
+                        showWay ? "" : "cache-th--collapsed"
+                      ].join(" ")}
+                    >
+                      <div className="cache-th__inner">
+                        {showWay && <span>Way</span>}
+                        <ColToggleBtn
+                          symbol="="
+                          expanded={showWay}
+                          label="Way"
+                          onToggle={() => setShowWay((v) => !v)}
+                        />
+                      </div>
                     </th>
-                    <th scope="col" className="cache-th cache-th--tag">
-                      Tag
+                    <th
+                      scope="col"
+                      className={[
+                        "cache-th cache-th--tag",
+                        showTag ? "" : "cache-th--collapsed"
+                      ].join(" ")}
+                    >
+                      <div className="cache-th__inner">
+                        {showTag && <span>Tag</span>}
+                        <ColToggleBtn
+                          symbol="#"
+                          expanded={showTag}
+                          label="Tag"
+                          onToggle={() => setShowTag((v) => !v)}
+                        />
+                      </div>
+                    </th>
+                    <th
+                      scope="col"
+                      className={[
+                        "cache-th cache-th--address",
+                        showAddress ? "" : "cache-th--collapsed"
+                      ].join(" ")}
+                    >
+                      <div className="cache-th__inner">
+                        {showAddress && <span>Address</span>}
+                        <ColToggleBtn
+                          symbol="@"
+                          expanded={showAddress}
+                          label="Address"
+                          onToggle={() => setShowAddress((v) => !v)}
+                        />
+                      </div>
                     </th>
                     <th scope="col" className="cache-th cache-th--data">
                       Data
@@ -114,6 +198,16 @@ export function CacheVisualizationPanel({
                         hasCompareCue ? "cache-way--compare-cue" : ""
                       ].join(" ");
 
+                      const blockAddress = way.valid
+                        ? encodeAddress({
+                            tag: way.tag,
+                            index: setIndex,
+                            offset: 0,
+                            offsetBits,
+                            indexBits
+                          })
+                        : null;
+
                       return (
                         <tr
                           key={`${level.id}-set-${setIndex}-way-${wayIndex}`}
@@ -133,19 +227,49 @@ export function CacheVisualizationPanel({
                               {setIndex}
                             </td>
                           )}
-                          <td className="cache-cell cache-cell--way">
-                            <div className="cache-cell--way__inner">
-                              <span className="cache-way-label">
-                                {wayIndex}
-                              </span>
-                              <span className="cache-way-indicators">
-                                <StatusDot active={way.valid} kind="valid" />
-                                <StatusDot active={way.dirty} kind="dirty" />
-                              </span>
-                            </div>
+                          <td
+                            className={[
+                              "cache-cell cache-cell--way",
+                              showWay ? "" : "cache-cell--collapsed"
+                            ].join(" ")}
+                          >
+                            <span
+                              className="cache-way-label"
+                              aria-hidden={showWay ? undefined : "true"}
+                              style={
+                                showWay ? undefined : { visibility: "hidden" }
+                              }
+                            >
+                              {wayIndex}
+                            </span>
                           </td>
-                          <td className="cache-cell cache-cell--tag">
-                            {way.valid ? way.tag : ""}
+                          <td
+                            className={[
+                              "cache-cell cache-cell--tag",
+                              showTag ? "" : "cache-cell--collapsed"
+                            ].join(" ")}
+                          >
+                            {showTag && (
+                              <div className="cache-cell--tag__inner">
+                                <span className="cache-tag-value">
+                                  {way.valid ? way.tag : ""}
+                                </span>
+                                <span className="cache-tag-indicators">
+                                  <StatusDot active={way.valid} kind="valid" />
+                                  <StatusDot active={way.dirty} kind="dirty" />
+                                </span>
+                              </div>
+                            )}
+                          </td>
+                          <td
+                            className={[
+                              "cache-cell cache-cell--address",
+                              showAddress ? "" : "cache-cell--collapsed"
+                            ].join(" ")}
+                          >
+                            {showAddress && blockAddress !== null
+                              ? String(blockAddress)
+                              : ""}
                           </td>
                           <td className="cache-cell cache-cell--data">
                             {way.valid ? (

@@ -70,7 +70,9 @@ describe("CacheVisualizationPanel", () => {
 
     // Headers: Set, Way, Tag, Data
     const headers = table!.querySelectorAll("th");
-    const headerTexts = Array.from(headers).map((th) => th.textContent);
+    const headerTexts = Array.from(headers).map(
+      (th) => th.querySelector("span")?.textContent ?? th.textContent
+    );
     expect(headerTexts).toContain("Set");
     expect(headerTexts).toContain("Way");
     expect(headerTexts).toContain("Tag");
@@ -110,8 +112,8 @@ describe("CacheVisualizationPanel", () => {
     expect(invalidDots[0].getAttribute("aria-label")).toBe("Invalid");
     expect(invalidDots[0].classList.contains("status-dot--off")).toBe(true);
 
-    // Invalid way should show empty tag and data
-    const invalidTag = invalidRow!.querySelector(".cache-cell--tag");
+    // Invalid way should show empty tag value (dots are still rendered)
+    const invalidTag = invalidRow!.querySelector(".cache-tag-value");
     expect(invalidTag?.textContent).toBe("");
     const invalidData = invalidRow!.querySelector(".cache-cell--data");
     expect(invalidData?.textContent).toBe("");
@@ -300,7 +302,7 @@ describe("CacheVisualizationPanel", () => {
     });
 
     const row = host.querySelector('[data-set-index="0"][data-way-index="0"]');
-    expect(row!.querySelector(".cache-cell--tag")?.textContent).toBe("");
+    expect(row!.querySelector(".cache-tag-value")?.textContent).toBe("");
     expect(row!.querySelector(".cache-cell--data")?.textContent).toBe("");
     expect(row!.querySelector(".cache-data-bytes")).toBeNull();
 
