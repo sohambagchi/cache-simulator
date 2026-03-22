@@ -11,6 +11,7 @@ import { AppShell } from "./ui/layout/AppShell";
 import { BlockDiagram } from "./ui/diagram/BlockDiagram";
 import { ExplanationLog } from "./ui/diagram/ExplanationLog";
 import { FormulaPanel } from "./ui/formula/FormulaPanel";
+import { ManualRequestPanel } from "./ui/controls/ManualRequestPanel";
 import { BUILTIN_WORKLOAD_EXAMPLES } from "./workloads/examples";
 import { useEffect, useMemo, useState } from "react";
 import type { ThemeMode } from "./ui/common/ThemeToggle";
@@ -225,6 +226,7 @@ function AppContent() {
           }
         />
       }
+      manualRequestPanel={<ManualRequestPanel onDispatch={dispatch} />}
       workloadPanel={
         <WorkloadPanel
           canRun={canRun}
@@ -262,6 +264,10 @@ function AppContent() {
         <MemoryPanel
           memory={state.simState.memory}
           events={state.simState.events}
+          levels={state.simState.levels.map((l) => ({
+            id: l.id,
+            blockSizeBytes: l.config.blockSizeBytes
+          }))}
         />
       }
       timelinePanel={(isOpen, onClose) => (

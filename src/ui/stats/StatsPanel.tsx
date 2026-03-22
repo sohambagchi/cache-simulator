@@ -58,31 +58,33 @@ export function StatsPanel({ stats, levels }: StatsPanelProps) {
         </div>
       </dl>
 
-      {/* Per-level cards */}
+      {/* Per-level tables */}
       {levels.length > 0 && (
         <div className="stats-panel__levels">
           {levels.map((levelId) => {
             const ls = stats.perLevel[levelId];
             return (
-              <dl key={levelId} className="stats-level-card">
-                <h4 className="stats-level-card__title">{levelId}</h4>
-                <div>
-                  <dt>Hits</dt>
-                  <dd>{ls.hits}</dd>
-                </div>
-                <div>
-                  <dt>Misses</dt>
-                  <dd>{ls.misses}</dd>
-                </div>
-                <div>
-                  <dt>Evictions</dt>
-                  <dd>{ls.evictions}</dd>
-                </div>
-                <div>
-                  <dt>Hit Rate</dt>
-                  <dd>{hitRate(ls.hits, ls.misses)}</dd>
-                </div>
-              </dl>
+              <div key={levelId} className="stats-level-table">
+                <h4 className="stats-level-table__title">{levelId}</h4>
+                <dl className="stats-level-table__grid">
+                  <div className="stats-level-cell">
+                    <dt>Hits</dt>
+                    <dd>{ls.hits}</dd>
+                  </div>
+                  <div className="stats-level-cell">
+                    <dt>Misses</dt>
+                    <dd>{ls.misses}</dd>
+                  </div>
+                  <div className="stats-level-cell">
+                    <dt>Evictions</dt>
+                    <dd>{ls.evictions}</dd>
+                  </div>
+                  <div className="stats-level-cell">
+                    <dt>Hit Rate</dt>
+                    <dd>{hitRate(ls.hits, ls.misses)}</dd>
+                  </div>
+                </dl>
+              </div>
             );
           })}
         </div>

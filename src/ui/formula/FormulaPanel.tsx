@@ -19,7 +19,7 @@ function tryDeriveGeometry(level: CacheLevelConfig) {
 
 export function FormulaPanel({ levels }: FormulaPanelProps) {
   const enabledLevels = levels.filter((l) => l.enabled);
-  const totalBits = 16; // simulator uses 16-bit addresses
+  const totalBits = 32; // simulator uses 32-bit addresses
 
   return (
     <div className="formula-panel" aria-label="Address decomposition formula">
@@ -43,27 +43,35 @@ export function FormulaPanel({ levels }: FormulaPanelProps) {
               <div className="formula-panel__segments">
                 <span className="formula-panel__seg formula-panel__seg--tag">
                   <span className="formula-panel__seg-label">Tag</span>
-                  <span className="formula-panel__seg-range">
-                    [{tagHi}…{tagLo}]
+                  <span className="formula-panel__seg-detail">
+                    <span className="formula-panel__seg-range">
+                      [{tagHi}…{tagLo}]
+                    </span>
+                    <span className="formula-panel__seg-bits">{tagBits}b</span>
                   </span>
-                  <span className="formula-panel__seg-bits">{tagBits}b</span>
                 </span>
                 {geo.indexBits > 0 && (
                   <span className="formula-panel__seg formula-panel__seg--index">
                     <span className="formula-panel__seg-label">Index</span>
-                    <span className="formula-panel__seg-range">
-                      [{idxHi}…{idxLo}]
-                    </span>
-                    <span className="formula-panel__seg-bits">
-                      {geo.indexBits}b
+                    <span className="formula-panel__seg-detail">
+                      <span className="formula-panel__seg-range">
+                        [{idxHi}…{idxLo}]
+                      </span>
+                      <span className="formula-panel__seg-bits">
+                        {geo.indexBits}b
+                      </span>
                     </span>
                   </span>
                 )}
                 <span className="formula-panel__seg formula-panel__seg--offset">
                   <span className="formula-panel__seg-label">Offset</span>
-                  <span className="formula-panel__seg-range">[{offHi}…0]</span>
-                  <span className="formula-panel__seg-bits">
-                    {geo.offsetBits}b
+                  <span className="formula-panel__seg-detail">
+                    <span className="formula-panel__seg-range">
+                      [{offHi}…0]
+                    </span>
+                    <span className="formula-panel__seg-bits">
+                      {geo.offsetBits}b
+                    </span>
                   </span>
                 </span>
               </div>

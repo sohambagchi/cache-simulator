@@ -147,12 +147,12 @@ export function BlockDiagram({
     return items;
   }, [enabledLevels]);
 
-  const nodeWidth = 64;
-  const nodeHeight = 44;
-  const gap = 48;
+  const nodeWidth = 96;
+  const nodeHeight = 48;
+  const gap = 114;
   const nodeCount = allNodes.length;
-  const svgPad = 16;
-  const labelAreaH = 16; // space below nodes for HIT/MISS label
+  const svgPad = 24;
+  const labelAreaH = 24; // space below nodes for HIT/MISS label
   const svgWidth = nodeCount * nodeWidth + (nodeCount - 1) * gap + svgPad * 2;
   const svgHeight = nodeHeight + labelAreaH + svgPad * 2;
 
@@ -176,7 +176,7 @@ export function BlockDiagram({
     [activeEvent, enabledLevels]
   );
 
-  // Use a key tied to the event so SVG animations restart on each new event
+  // Use a key tied to the event so CSS animations restart on each new event
   const animKey = activeEvent
     ? `${activeEvent.operationId}-${activeEvent.stage}-${activeEvent.levelId}`
     : "idle";
@@ -188,7 +188,6 @@ export function BlockDiagram({
       aria-label="Cache hierarchy block diagram"
     >
       <svg
-        key={animKey}
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
         width={svgWidth}
         height={svgHeight}
@@ -231,48 +230,52 @@ export function BlockDiagram({
               {/* Arrow tip */}
               {isForward && (
                 <polygon
-                  points={`${x2 - 7},${cy - 4} ${x2},${cy} ${x2 - 7},${cy + 4}`}
+                  points={`${x2 - 11},${cy - 6} ${x2},${cy} ${x2 - 11},${cy + 6}`}
                   fill={arrowColor}
                 />
               )}
               {isReturn && (
                 <polygon
-                  points={`${x1 + 7},${cy - 4} ${x1},${cy} ${x1 + 7},${cy + 4}`}
+                  points={`${x1 + 11},${cy - 6} ${x1},${cy} ${x1 + 11},${cy + 6}`}
                   fill={arrowColor}
                 />
               )}
-              {/* Traveling dot */}
+              {/* Traveling dot — CSS animated */}
               {isForward && (
-                <circle r={4} fill={dotColor} opacity={0.9}>
-                  <animate
-                    attributeName="cx"
-                    from={x1}
-                    to={x2 - 8}
-                    dur="0.5s"
-                    fill="freeze"
-                  />
-                  <animateTransform
-                    attributeName="transform"
-                    type="translate"
-                    from="0 0"
-                    to="0 0"
-                    dur="0.5s"
-                    fill="freeze"
-                  />
-                  <set attributeName="cy" to={cy} />
-                </circle>
+                <circle
+                  key={animKey}
+                  cx={x2 - 12}
+                  cy={cy}
+                  r={6}
+                  fill={dotColor}
+                  opacity={0.9}
+                  className="block-diagram__dot"
+                  style={
+                    {
+                      "--dot-from": x1,
+                      "--dot-to": x2 - 12,
+                      "--dot-cy": cy
+                    } as React.CSSProperties
+                  }
+                />
               )}
               {isReturn && (
-                <circle r={4} fill={dotColor} opacity={0.9}>
-                  <animate
-                    attributeName="cx"
-                    from={x2}
-                    to={x1 + 8}
-                    dur="0.5s"
-                    fill="freeze"
-                  />
-                  <set attributeName="cy" to={cy} />
-                </circle>
+                <circle
+                  key={animKey}
+                  cx={x1 + 12}
+                  cy={cy}
+                  r={6}
+                  fill={dotColor}
+                  opacity={0.9}
+                  className="block-diagram__dot"
+                  style={
+                    {
+                      "--dot-from": x2,
+                      "--dot-to": x1 + 12,
+                      "--dot-cy": cy
+                    } as React.CSSProperties
+                  }
+                />
               )}
             </g>
           );
@@ -303,7 +306,7 @@ export function BlockDiagram({
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill={isFilled ? "#fff" : "var(--text-strong)"}
-                fontSize={12}
+                fontSize={21}
                 fontWeight={700}
                 fontFamily="inherit"
               >
@@ -313,9 +316,9 @@ export function BlockDiagram({
               {(state === "hit" || state === "miss") && (
                 <text
                   x={node.x + nodeWidth / 2}
-                  y={node.y + nodeHeight + 12}
+                  y={node.y + nodeHeight + 18}
                   textAnchor="middle"
-                  fontSize={9}
+                  fontSize={17}
                   fontWeight={700}
                   fill={color}
                   fontFamily="inherit"

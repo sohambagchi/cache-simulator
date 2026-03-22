@@ -75,6 +75,7 @@ h1 {
   display: inline-grid;
   grid-template-rows: auto auto;
   gap: 0.2rem;
+  align-self: flex-end;
 }
 
 .global-control-bar__speed > span {
@@ -245,14 +246,14 @@ h1 {
 }
 
 .cache-level-header__policies {
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   color: var(--text-muted);
   margin-left: 0.25rem;
 }
 
 .cache-level-header__size {
   margin-left: auto;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-strong);
 }
@@ -284,7 +285,7 @@ h1 {
 }
 
 .cache-level-body label > span {
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -380,36 +381,59 @@ h1 {
   font-size: 0.95rem;
 }
 
-/* Per-level cards */
+/* Per-level tables */
 .stats-panel__levels {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: 0.5rem;
 }
 
-.stats-level-card {
-  margin: 0;
-  padding: 0.5rem 0.65rem;
+.stats-level-table {
   border: 1px solid var(--border-subtle);
   border-radius: 0.4rem;
   background: var(--surface-card);
+  padding: 0.5rem 0.65rem;
 }
 
-.stats-level-card__title {
-  margin: 0 0 0.35rem;
+.stats-level-table__title {
+  margin: 0 0 0.4rem;
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-strong);
 }
 
-.stats-level-card dt {
-  font-size: 0.72rem;
-  color: var(--text-muted);
+.stats-level-table__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, auto);
+  gap: 0.35rem;
+  margin: 0;
 }
 
-.stats-level-card dd {
-  margin: 0.1rem 0 0.3rem;
-  font-weight: 700;
+.stats-level-cell {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.3rem;
+  background: var(--surface-accent);
+}
+
+.stats-level-cell dt {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.stats-level-cell dd {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-strong);
 }
 
 /* ── Cache table ───────────────────────────────────────── */
@@ -637,7 +661,7 @@ h1 {
 
 .cache-cell--tag {
   font-family: "Courier New", monospace;
-  font-size: 0.9rem;
+  font-size: 1rem;
   border-right: 1px solid var(--border-subtle);
 }
 
@@ -663,7 +687,7 @@ h1 {
 
 .cache-cell--address {
   font-family: "Courier New", monospace;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   border-right: 1px solid var(--border-subtle);
   color: var(--text-muted);
   white-space: nowrap;
@@ -683,7 +707,7 @@ h1 {
 .cache-byte {
   padding: 0.25rem 0.35rem;
   font-family: "Courier New", monospace;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   text-align: center;
   min-width: 2rem;
   border-right: 1px solid var(--border-subtle);
@@ -763,10 +787,76 @@ h1 {
   border-color: #557e9f;
 }
 
-.memory-list,
 .timeline-list {
   margin: 0;
   padding-left: 1rem;
+}
+
+/* ── Memory grid ─────────────────────────────────────── */
+
+.memory-grid {
+  display: grid;
+  gap: 1px;
+}
+
+.memory-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  font-family: "Courier New", monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 2px;
+  cursor: default;
+  user-select: none;
+  overflow: visible;
+}
+
+.memory-cell::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  white-space: pre-line;
+  line-height: 1.4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 80ms ease-out;
+  z-index: 20;
+  min-width: max-content;
+}
+
+.memory-cell:hover::after {
+  opacity: 1;
+}
+
+/* Right-edge cells: anchor tooltip's right edge to the cell so it grows leftward */
+.memory-cell.tooltip-anchor-right::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+/* Left-edge cells: anchor tooltip's left edge to the cell so it grows rightward */
+.memory-cell.tooltip-anchor-left::after {
+  left: 0;
+  transform: none;
+}
+
+/* Top-edge cells: flip tooltip below the cell instead of above */
+.memory-cell.tooltip-below::after {
+  bottom: auto;
+  top: calc(100% + 6px);
 }
 
 /* ── Shared form control base ─────────────────────────── */
@@ -944,7 +1034,7 @@ button {
   align-items: center;
   gap: 0.35rem;
   cursor: pointer;
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: var(--text-muted);
   user-select: none;
@@ -1010,13 +1100,13 @@ button {
 }
 
 .cache-tab__id {
-  font-size: 0.82rem;
+  font-size: 0.92rem;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
 
 .cache-tab__size {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-muted);
 }
@@ -1119,8 +1209,9 @@ button {
 
 .insight-panel {
   display: flex;
-  align-items: center;
-  gap: 1.25rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0rem;
 }
 
 /* ── Block Diagram ──────────────────────────────────── */
@@ -1136,27 +1227,56 @@ button {
   overflow: visible;
 }
 
+/* ── Block Diagram traveling dot ──────────────────────── */
+
+.block-diagram__dot {
+  animation: dot-travel 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+@keyframes dot-travel {
+  from {
+    cx: var(--dot-from);
+  }
+  to {
+    cx: var(--dot-to);
+  }
+}
+
+.block-diagram rect {
+  transition:
+    fill 200ms ease-out,
+    stroke 200ms ease-out,
+    stroke-width 150ms ease-out;
+}
+
+.block-diagram text {
+  transition: fill 200ms ease-out;
+}
+
 /* ── Explanation Log ────────────────────────────────── */
 
 .explanation-log {
   min-width: 0;
-  flex: 1;
+  width: 100%;
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  align-items: baseline;
+  gap: 1.5rem;
 }
 
 /* Op header: #3  READ  addr 0x00A0 */
 .explanation-log__op-header {
   display: flex;
+  flex-direction: row;
   align-items: baseline;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
   line-height: 1;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .explanation-log__op-index {
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--text-muted);
   letter-spacing: -0.02em;
@@ -1164,7 +1284,7 @@ button {
 }
 
 .explanation-log__op-kind {
-  font-size: 0.7rem;
+  font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   border-radius: 0.25rem;
@@ -1188,7 +1308,7 @@ button {
 
 .explanation-log__op-address {
   font-family: "Courier New", monospace;
-  font-size: 0.9rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--text-strong);
   flex-shrink: 0;
@@ -1196,12 +1316,14 @@ button {
 
 .explanation-log__op-value {
   font-family: "Courier New", monospace;
-  font-size: 0.82rem;
+  font-size: 1.2rem;
   color: var(--text-muted);
 }
 
 /* Message box */
 .explanation-log__box {
+  flex: 0.5 1 auto;
+  min-width: 0;
   border-radius: 0.4rem;
   padding: 0.45rem 0.65rem;
   border-left: 3px solid transparent;
@@ -1242,7 +1364,7 @@ button {
 
 .explanation-log__sentence {
   font-family: "Courier New", monospace;
-  font-size: 0.82rem;
+  font-size: 1.2rem;
   font-weight: 500;
   color: var(--text-strong);
   line-height: 1.45;
@@ -1259,7 +1381,7 @@ button {
 /* Keyword highlight */
 .explanation-log__keyword {
   font-weight: 800;
-  font-size: 0.88rem;
+  font-size: 1.2rem;
   letter-spacing: 0.01em;
 }
 
@@ -1309,6 +1431,11 @@ button {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .explanation-log {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 /* ── Formula Panel ──────────────────────────────────── */
@@ -1320,11 +1447,11 @@ button {
 .formula-panel {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.3rem;
 }
 
 .formula-panel__title {
-  font-size: 0.65rem;
+  font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -1334,26 +1461,27 @@ button {
 .formula-panel__levels {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.25rem;
 }
 
 .formula-panel__level {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.72rem;
+  gap: 0.5rem;
+  font-size: 0.85rem;
 }
 
 .formula-panel__level-id {
   font-weight: 800;
   color: var(--text-strong);
-  min-width: 1.5rem;
+  min-width: 1.8rem;
   letter-spacing: 0.03em;
+  font-size: 0.9rem;
 }
 
 .formula-panel__segments {
   display: flex;
-  gap: 2px;
+  gap: 3px;
   align-items: stretch;
 }
 
@@ -1361,10 +1489,10 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.15rem 0.4rem;
+  padding: 0.6rem 0.5rem;
   border-radius: 0.25rem;
-  min-width: 2.6rem;
-  gap: 0.05rem;
+  min-width: 3rem;
+  gap: 0.1rem;
 }
 
 .formula-panel__seg--tag {
@@ -1383,7 +1511,7 @@ button {
 }
 
 .formula-panel__seg-label {
-  font-size: 0.6rem;
+  font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1391,9 +1519,15 @@ button {
   line-height: 1;
 }
 
+.formula-panel__seg-detail {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
 .formula-panel__seg-range {
   font-family: "Courier New", monospace;
-  font-size: 0.65rem;
+  font-size: 1rem;
   color: var(--text-strong);
   font-weight: 600;
   line-height: 1;
@@ -1401,15 +1535,17 @@ button {
 }
 
 .formula-panel__seg-bits {
-  font-size: 0.58rem;
+  font-size: 1rem;
   color: var(--text-muted);
   line-height: 1;
+  font-weight: 600;
 }
 
 .formula-panel__sets {
-  font-size: 0.65rem;
+  font-size: 1rem;
   color: var(--text-muted);
   white-space: nowrap;
+  font-weight: 600;
 }
 
 /* ── Timeline: Operation groups ─────────────────────── */
@@ -1452,14 +1588,14 @@ button {
 }
 
 .timeline-op__index {
-  font-size: 0.78rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-muted);
   min-width: 1.8rem;
 }
 
 .timeline-op__kind {
-  font-size: 0.72rem;
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   border-radius: 0.2rem;
@@ -1478,7 +1614,7 @@ button {
 
 .timeline-op__addr {
   font-family: "Courier New", monospace;
-  font-size: 0.88rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--text-strong);
 }
@@ -1496,7 +1632,7 @@ button {
 }
 
 .timeline-op__field-label {
-  font-size: 0.65rem;
+  font-size: 1rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1505,7 +1641,7 @@ button {
 
 .timeline-op__field-value {
   font-family: "Courier New", monospace;
-  font-size: 0.82rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--text-strong);
 }
@@ -1557,15 +1693,15 @@ button {
 }
 
 .timeline-step__stage {
-  font-size: 0.78rem;
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.04em;
-  min-width: 3.5rem;
+  min-width: 6rem;
   color: var(--text-strong);
 }
 
 .timeline-step__level {
-  font-size: 0.82rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-muted);
   min-width: 2rem;
@@ -1583,6 +1719,7 @@ button {
 .timeline-step__detail--victim {
   color: #c97b2a;
   font-weight: 600;
+  font-size: 1rem;
 }
 
 .timeline-step__way {
@@ -1590,7 +1727,7 @@ button {
   border-radius: 0.2rem;
   background: var(--surface-muted);
   font-family: "Courier New", monospace;
-  font-size: 0.75rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-muted);
   border: 1px solid var(--border-subtle);

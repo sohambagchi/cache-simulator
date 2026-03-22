@@ -100,7 +100,7 @@ export function TimelineDrawer({
                       >
                         {opKind === "R" ? "READ" : "WRITE"}
                       </span>
-                      <span className="timeline-op__addr">{hex(addr)}</span>
+                      <span className="timeline-op__addr">{addr}</span>
                       {decodeEvent && (
                         <span className="timeline-op__decode">
                           <span className="timeline-op__field">

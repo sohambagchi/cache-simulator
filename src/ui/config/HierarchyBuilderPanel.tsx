@@ -236,7 +236,7 @@ function CacheLevelForm({
     <div className="cache-level-body">
       <div className="slider-field">
         <label>
-          <span>Total size: {formatBytesLabel(level.totalSizeBytes)}</span>
+          <span>Capacity: {formatBytesLabel(level.totalSizeBytes)}</span>
           <input
             aria-label={`${level.id} total size bytes`}
             aria-invalid={totalSizeErrors.length > 0}

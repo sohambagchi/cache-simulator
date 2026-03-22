@@ -53,7 +53,7 @@ describe("StatsPanel", () => {
     expect(secondary.textContent).toContain("Mem Writes");
 
     // Per-level cards
-    const levelCards = host.querySelectorAll(".stats-level-card");
+    const levelCards = host.querySelectorAll(".stats-level-table");
     expect(levelCards).toHaveLength(2);
     expect(levelCards[0].textContent).toContain("L1");
     expect(levelCards[0].textContent).toContain("66.7%");

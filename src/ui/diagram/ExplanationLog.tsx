@@ -34,7 +34,7 @@ function partsForEvent(event: SimEvent, op: WorkloadOp): SentenceParts {
       if (event.comparedWays.length === 0)
         return { keyword: null, rest: `Comparing tags in ${lvl}…` };
       const parts = event.comparedWays.map((w) => {
-        if (!w.valid) return `way ${w.way}: empty`;
+        if (!w.valid) return `way ${w.way}: ∅`;
         if (w.match) return `way ${w.way}: tag ${w.tag} ✓`;
         return `way ${w.way}: tag ${w.tag} ✗`;
       });
@@ -164,19 +164,18 @@ export function ExplanationLog({
               )}
               {parts?.rest ?? ""}
             </p>
-          </div>
-
-          {/* Pip progress row only */}
-          <div className="explanation-log__pip-row" aria-hidden="true">
-            {Array.from({ length: totalSubEvents }, (_, i) => (
-              <span
-                key={i}
-                className={
-                  "explanation-log__pip" +
-                  (i === subEventIndex ? " explanation-log__pip--active" : "")
-                }
-              />
-            ))}
+            {/* Pip progress row */}
+            <div className="explanation-log__pip-row" aria-hidden="true">
+              {Array.from({ length: totalSubEvents }, (_, i) => (
+                <span
+                  key={i}
+                  className={
+                    "explanation-log__pip" +
+                    (i === subEventIndex ? " explanation-log__pip--active" : "")
+                  }
+                />
+              ))}
+            </div>
           </div>
         </>
       ) : (

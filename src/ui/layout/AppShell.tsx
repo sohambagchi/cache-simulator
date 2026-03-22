@@ -12,6 +12,7 @@ type AppShellProps = {
   hierarchyPanel: ReactNode;
   hierarchyHeaderActions?: ReactNode;
   workloadPanel: ReactNode;
+  manualRequestPanel?: ReactNode;
   statsPanel: ReactNode;
   cachePanel: ReactNode;
   memoryPanel: ReactNode;
@@ -27,6 +28,7 @@ export function AppShell({
   hierarchyPanel,
   hierarchyHeaderActions,
   workloadPanel,
+  manualRequestPanel,
   statsPanel,
   cachePanel,
   memoryPanel,
@@ -65,6 +67,15 @@ export function AppShell({
           >
             {workloadPanel}
           </CollapsibleCard>
+          {manualRequestPanel && (
+            <CollapsibleCard
+              title="Manual Request"
+              defaultExpanded={true}
+              sectionId="manual-request-panel"
+            >
+              {manualRequestPanel}
+            </CollapsibleCard>
+          )}
           <CollapsibleCard
             title="Hierarchy"
             defaultExpanded={true}
