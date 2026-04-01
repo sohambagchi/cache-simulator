@@ -8,6 +8,33 @@ export type WorkloadExample = {
 export const BUILTIN_WORKLOAD_EXAMPLES: readonly WorkloadExample[] = [
   // ── 1. Block Size & Spatial Locality ──────────────────────────────
   {
+    id: "example-1-hits-and-misses",
+    label: "Example 1: Hits and Misses",
+    description: "Two sets of accesses, causes eviction in a small cache.",
+    text: [
+      "R 4",
+      "R 7",
+      "R 10",
+      "R 13", 
+      "R 16",
+      "R 68",
+      "R 73",
+      "R 78",
+      "R 83",
+      "R 88",
+      "R 4",
+      "R 7",
+      "R 10",
+      "R 13", 
+      "R 16",
+      "R 68",
+      "R 73",
+      "R 78",
+      "R 83",
+      "R 88"
+    ].join("\n")
+  },
+  {
     id: "spatial-locality",
     label: "1 · Spatial Locality",
     description:
