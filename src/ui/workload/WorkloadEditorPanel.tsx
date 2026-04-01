@@ -45,7 +45,7 @@ export function WorkloadEditorPanel({
           aria-label="Workload trace"
           value={workloadText}
           rows={8}
-          style={{ fontSize: '2rem' }}
+          style={{ fontSize: '1.25rem' }}
           onChange={(event) => onChangeTrace(event.currentTarget.value)}
         />
       </label>
