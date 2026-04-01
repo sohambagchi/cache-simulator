@@ -36,6 +36,21 @@ export const BUILTIN_WORKLOAD_EXAMPLES: readonly WorkloadExample[] = [
     ].join("\n")
   },
   {
+    id: "example-2-hits-and-misses-direct-mapped",
+    label: "Example 2: Hits and Misses (Direct-Mapped)",
+    description: "Low addresses then high addresses",
+    text: [
+      "# Cache Size: 1024B; Block Size: 64B; Associativity: 1-way",
+      "R 8",
+      "R 96",
+      "R 32",
+      "R 480",
+      "R 976",
+      "R 1040",
+      "R 1096",
+    ].join("\n")
+  },
+  {
     id: "example-4-hits-and-misses-2-way",
     label: "Example 4: Hits and Misses (2-way)",
     description: "Some accesses with no obvious pattern.",
