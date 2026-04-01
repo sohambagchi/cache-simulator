@@ -3,7 +3,7 @@ export const TOTAL_SIZE_OPTIONS = Array.from(
   (_, index) => 2 ** (index + 2)
 );
 export const BLOCK_SIZE_OPTIONS = Array.from(
-  { length: 4 },
+  { length: 5 },
   (_, index) => 2 ** (index + 2)
 );
 export const GEOMETRY_SIZE_OPTIONS = TOTAL_SIZE_OPTIONS;

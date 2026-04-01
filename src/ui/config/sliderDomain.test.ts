@@ -9,10 +9,10 @@ import {
 } from "./sliderDomain";
 
 describe("sliderDomain", () => {
-  it("provides powers-of-two block size options from 4B to 32B", () => {
+  it("provides powers-of-two block size options from 4B to 64B", () => {
     expect(BLOCK_SIZE_OPTIONS[0]).toBe(4);
-    expect(BLOCK_SIZE_OPTIONS.at(-1)).toBe(32);
-    expect(BLOCK_SIZE_OPTIONS).toHaveLength(4);
+    expect(BLOCK_SIZE_OPTIONS.at(-1)).toBe(64);
+    expect(BLOCK_SIZE_OPTIONS).toHaveLength(5);
   });
 
   it("provides powers-of-two total size options from 4B to 33MB", () => {
@@ -24,7 +24,9 @@ describe("sliderDomain", () => {
   it("maps option values to/from slider indices", () => {
     expect(toSliderIndex(4, BLOCK_SIZE_OPTIONS)).toBe(0);
     expect(toSliderIndex(32, BLOCK_SIZE_OPTIONS)).toBe(3);
+    expect(toSliderIndex(64, BLOCK_SIZE_OPTIONS)).toBe(4);
     expect(fromSliderIndex(3, BLOCK_SIZE_OPTIONS)).toBe(32);
+    expect(fromSliderIndex(4, BLOCK_SIZE_OPTIONS)).toBe(64);
   });
 
   it("formats bytes and associativity labels for inline display", () => {
