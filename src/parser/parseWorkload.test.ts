@@ -44,7 +44,7 @@ describe("parseWorkload", () => {
   });
 
   it("emits explicit out-of-range diagnostics for address and value", () => {
-    const result = parseWorkload("R -1\nR 1024\nW 4 256\nW 4 -1");
+    const result = parseWorkload("R -1\nR 2048\nW 4 256\nW 4 -1");
     const expectedAddressRange = `${V1_LIMITS.minAddress}..${V1_LIMITS.maxAddress}`;
     const expectedValueRange = `${V1_LIMITS.minValue}..${V1_LIMITS.maxValue}`;
 

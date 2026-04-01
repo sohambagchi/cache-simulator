@@ -91,7 +91,10 @@ describe("WorkloadEditorPanel", () => {
     const textarea = host.querySelector(
       'textarea[aria-label="Workload trace"]'
     ) as HTMLTextAreaElement;
-    expect(textarea.value).toBe(BUILTIN_WORKLOAD_EXAMPLES[0].text);
+    const spatialExample = BUILTIN_WORKLOAD_EXAMPLES.find(
+      (e) => e.id === "spatial-locality"
+    );
+    expect(textarea.value).toBe(spatialExample?.text);
 
     act(() => {
       root.unmount();
