@@ -17,16 +17,16 @@ const DEFAULT_CONFIG_LEVELS: CacheLevelConfig[] = [
   {
     id: "L1",
     enabled: true,
-    totalSizeBytes: 256,
-    blockSizeBytes: 16,
-    associativity: 2,
+    totalSizeBytes: 64,
+    blockSizeBytes: 8,
+    associativity: 1,
     replacementPolicy: "LRU",
     writeHitPolicy: "WRITE_BACK",
     writeMissPolicy: "WRITE_ALLOCATE"
   },
   {
     id: "L2",
-    enabled: true,
+    enabled: false,
     totalSizeBytes: 512,
     blockSizeBytes: 16,
     associativity: 2,
