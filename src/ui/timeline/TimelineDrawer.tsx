@@ -28,10 +28,6 @@ const STAGE_VARIANT: Record<SimEventStage, string> = {
   memory: "info"
 };
 
-function hex(n: number) {
-  return `0x${n.toString(16).toUpperCase().padStart(4, "0")}`;
-}
-
 export function TimelineDrawer({
   events,
   isOpen,

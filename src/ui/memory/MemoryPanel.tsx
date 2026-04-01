@@ -91,7 +91,6 @@ export function MemoryPanel({ memory, events, levels }: MemoryPanelProps) {
 
         const col = address % columns; // 0-based column index
         const row = Math.floor(address / columns); // 0-based row index
-        const totalRows = Math.ceil(memory.length / columns);
         const isRightEdge = col >= columns - 2; // last two columns → tooltip grows left
         const isLeftEdge = col <= 1; // first two columns → tooltip grows right
         const isTopEdge = row <= 1; // first two rows → tooltip flips below
