@@ -12,6 +12,7 @@ export const BUILTIN_WORKLOAD_EXAMPLES: readonly WorkloadExample[] = [
     label: "Example 1: Hits and Misses",
     description: "Two sets of accesses, causes eviction in a small cache.",
     text: [
+      "# Cache Size: 64B; Block Size: 8B; Associativity: 1-way",
       "R 4",
       "R 7",
       "R 10",
@@ -32,6 +33,28 @@ export const BUILTIN_WORKLOAD_EXAMPLES: readonly WorkloadExample[] = [
       "R 78",
       "R 83",
       "R 88"
+    ].join("\n")
+  },
+  {
+    id: "example-4-hits-and-misses-2-way",
+    label: "Example 4: Hits and Misses (2-way)",
+    description: "Some accesses with no obvious pattern.",
+    text: [
+      "# Cache Size: 64B; Block Size: 8B; Associativity: 2-way",
+      "R 4",
+      "R 7",
+      "R 10",
+      "R 13",
+      "R 16",
+      "R 24",
+      "R 36",
+      "R 4",
+      "R 48",
+      "R 64",
+      "R 4",
+      "R 36",
+      "R 64",
+      "R 4"
     ].join("\n")
   },
   {
