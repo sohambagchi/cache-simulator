@@ -73,6 +73,27 @@ export const BUILTIN_WORKLOAD_EXAMPLES: readonly WorkloadExample[] = [
     ].join("\n")
   },
   {
+    id: "example-5-capacity-misses-fully-associative",
+    label: "Example 5: Capacity Misses (Fully Associative)",
+    description: "Accesses to more unique blocks than the cache can hold.",
+    text: [
+      "# Cache Size: 64B; Block Size: 8B; Associativity: 8-way (fully assoc)",
+      "R 0",
+      "R 8",
+      "R 16",
+      "R 24",
+      "R 32",
+      "R 40",
+      "R 48",
+      "R 56",
+      "# The next access will trigger a capacity miss and cause an eviction",
+      "R 64",
+      "R 0",
+      "R 8",
+      "R 16",
+    ].join("\n")
+  },
+  {
     id: "spatial-locality",
     label: "1 · Spatial Locality",
     description:
